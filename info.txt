@@ -1,0 +1,70 @@
+App\Models\Transaction {#1023 // app\Http\Controllers\Api\CardPaymentController.php:126
+  #connection: "mysql"
+  #table: "transactions"
+  #primaryKey: "id"
+  #keyType: "int"
+  +incrementing: true
+  #with: []
+  #withCount: []
+  +preventsLazyLoading: false
+  #perPage: 15
+  +exists: true
+  +wasRecentlyCreated: true
+  #escapeWhenCastingToString: false
+  #attributes: array:9 [
+    "sender_id" => 2
+    "receiver_id" => 3
+    "amount" => "6.00"
+    "status" => "approved"
+    "signature" => "ade78ebdc59143156785300b3cbd375a1583a58c5cc78fd3b957cf2fd31aa637"
+    "type" => "card_payment"
+    "updated_at" => "2025-07-23 14:23:31"
+    "created_at" => "2025-07-23 14:23:30"
+    "id" => 27
+  ]
+  #original: array:9 [
+    "sender_id" => 2
+    "receiver_id" => 3
+    "amount" => "6.00"
+    "status" => "approved"
+    "signature" => "ade78ebdc59143156785300b3cbd375a1583a58c5cc78fd3b957cf2fd31aa637"
+    "type" => "card_payment"
+    "updated_at" => "2025-07-23 14:23:31"
+    "created_at" => "2025-07-23 14:23:30"
+    "id" => 27
+  ]
+  #changes: array:2 [
+    "status" => "approved"
+    "updated_at" => "2025-07-23 14:23:31"
+  ]
+  #previous: array:2 [
+    "status" => "pending"
+    "updated_at" => "2025-07-23 14:23:30"
+  ]
+  #casts: []
+  #classCastCache: []
+  #attributeCastCache: []
+  #dateFormat: null
+  #appends: []
+  #dispatchesEvents: []
+  #observables: []
+  #relations: []
+  #touches: []
+  #relationAutoloadCallback: null
+  #relationAutoloadContext: null
+  +timestamps: true
+  +usesUniqueIds: false
+  #hidden: []
+  #visible: []
+  #fillable: array:6 [
+    0 => "sender_id"
+    1 => "receiver_id"
+    2 => "amount"
+    3 => "status"
+    4 => "signature"
+    5 => "type"
+  ]
+  #guarded: array:1 [
+    0 => "*"
+  ]
+}
