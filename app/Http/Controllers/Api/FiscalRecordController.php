@@ -387,7 +387,8 @@ class FiscalRecordController extends Controller
         $receipt .= str_repeat('=', $lineWidth) . "\n";
 
         if ($paymentMethod === 'cash') {
-            $receipt .= padLine('Paid (in cash)', "{$sumFmt} PSU", $lineWidth) . "\n";
+            $paid = $sumFmt + $change;
+            $receipt .= padLine('Paid (in cash)', "{$paid} PSU", $lineWidth) . "\n";
             $changeFmt = number_format($change, 2, '.', '');
             $receipt .= padLine('Change', "{$changeFmt} PSU", $lineWidth) . "\n\n";
         } else {
