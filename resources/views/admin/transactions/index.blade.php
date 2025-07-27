@@ -47,6 +47,7 @@
                     <th>Signature</th>
                     <th>Error</th>
                     <th>Created At</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -80,6 +81,13 @@
                         </td>
                         <td>{{ $transaction->error ?? '-' }}</td>
                         <td>{{ $transaction->created_at->format('H:i:s d.m.Y') }} UTC</td>
+                        <td>
+                            <a href="{{ route('admin.transactions.refund', $transaction->id) }}">
+                                <button type="submit" class="ui ui-button ui-corner-all" title="Refund">
+                                    <span class="ui-icon ui-icon-arrowreturnthick-1-w"></span>
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                 @endforeach
             </tbody>

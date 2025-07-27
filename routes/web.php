@@ -32,6 +32,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('/users/{id}', [AdminController::class, 'destroy'])->name('users.destroy');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions/{id}/refund', [TransactionController::class, 'refund'])->name('transactions.refund');
     
     Route::get('/fiscal-records', [FiscalRecordController::class, 'index'])->name('fiscal_records.index');
 

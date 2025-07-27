@@ -129,7 +129,7 @@
         <div class="accordion">
             <h3>Main info</h3>
             <div>
-                <h3>Your balance: <strong>Ʉ{{ number_format($user->balance, 2) }}</strong></h3>
+                <h3 style="color: {{ $user->balance < 0 ? 'red' : 'black' }}">Your balance: <strong>Ʉ{{ number_format($user->balance, 2) }}</strong></h3>
                 <h5>Your current status: <strong
                         style="color: {{ $user->status->color() }}">{{ $user->status->label() }}</strong></h5>
                 <h5>Your current role: <strong>{{ ucfirst($user->role) }}</strong></h5>
