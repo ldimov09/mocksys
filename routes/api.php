@@ -5,6 +5,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CardPaymentController;
 use App\Http\Controllers\Api\TransferController;
 use App\Http\Controllers\Api\FiscalRecordController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\PersonalAccessToken;
 
 Route::post('/fiscalize', [FiscalRecordController::class, 'process']);
 Route::post('/card-payment', [CardPaymentController::class, 'process']);
@@ -20,4 +23,5 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/keys/transaction/toggle', [AuthController::class, 'toggleTransactionKey'])->name('keys.transaction.toggle');
         Route::post('/keys/fiscal/toggle', [AuthController::class, 'toggleFiscalKey'])->name('keys.fiscal.toggle');
     });
+    
 });

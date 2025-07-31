@@ -24,6 +24,20 @@ class TransferController extends Controller
             $sender = $request->user();
             $receiver = User::where('account_number', $data["receiver_account"])->first();
 
+            if(!$sender || !$receiver){
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Sender or receiver do not exist.',
+                ], status: 400);
+            }
+
+            if($sender->id == $receiver->id){
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Sender and receiver cannot match.',
+                ], status: 400);
+            }
+
             $transaction = TransactionHelper::logTransaction($sender->id, $receiver->id, $data['amount'], 'pending', 'transfer');
 
             // Verify PIN
@@ -34,7 +48,7 @@ class TransferController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'data' => 'Invalid PIN (password).',
+                    'error' => 'Invalid PIN (password).',
                 ], status: 400);
             }
 
@@ -45,7 +59,7 @@ class TransferController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'data' => "The amount has to be a positive number!",
+                    'error' => "The amount has to be a positive number!",
                 ], status: 400);
             }
 
@@ -57,7 +71,7 @@ class TransferController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'data' => "Insufficient balance!",
+                    'error' => "Insufficient balance!",
                 ], status: 400);
             }
 
@@ -69,7 +83,7 @@ class TransferController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'data' => "Your account is currently inactive!",
+                    'error' => "Your account is currently inactive!",
                 ], 403);
             }
 
@@ -80,7 +94,7 @@ class TransferController extends Controller
 
                 return response()->json([
                     'success' => false,
-                    'data' => "The receiver's account is currently inactive!",
+                    'error' => "The receiver's account is currently inactive!",
                 ], 400);
             }
 
@@ -107,7 +121,7 @@ class TransferController extends Controller
 
             return response()->json([
                 'success' => false,
-                'data' => "Unexpected error!",
+                'error' => "Unexpected error!",
             ], 500);
         }
     }

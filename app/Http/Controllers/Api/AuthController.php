@@ -14,11 +14,11 @@ class AuthController
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'account_number' => 'required|string',
+            'user_name' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('account_number', $credentials['account_number'])->first();
+        $user = User::where('user_name', $credentials['user_name'])->first();
 
         if ($user && Hash::check($credentials['password'], (string) $user->password)) {
             if (!$user->status->isEnabled()) {
@@ -26,7 +26,7 @@ class AuthController
                 return back()->with('error', 'No access granted due to disabled account');
             }
 
-            LogHelper::log('authentication', "Logged in: Account number: " . $credentials['account_number'], $user->id);
+            LogHelper::log('authentication', "Logged in: User name: " . $credentials['user_name'], $user->id);
 
             $token = $user->createToken('pwa-token')->plainTextToken;
 
@@ -38,7 +38,7 @@ class AuthController
             ]);
         }
 
-        LogHelper::log('authentication', "Invalid login credentials: Account number: " . $credentials['account_number'], null);
+        LogHelper::log('authentication', "Invalid login credentials: User name: " . $credentials['user_name'], null);
         return response()->json([
             'success' => false,
             'error' => "Invalid login credentials!"
@@ -49,6 +49,13 @@ class AuthController
     {
         try {
             $user = User::where('account_number', $accountNumber)->first();
+
+            if(!$user){
+                return response()->json([
+                    'success' => false,
+                    'error' => "User does not exist!"
+                ], 404);
+            }
 
             return response()->json([
                 'success' => true,
@@ -77,8 +84,6 @@ class AuthController
         $user->transaction_key_enabled = true;
         $user->save();
 
-        LogHelper::log('users', "Generated new transaction key", request()->user()->id, $user->id);
-
         return response()->json([
             'success' => true,
             'transaction_key' => $user->transaction_key
@@ -100,8 +105,6 @@ class AuthController
         $user->fiscal_key_enabled = true;
         $user->save();
 
-        LogHelper::log('users', "Generated new fiscal key", request()->user()->id, $user->id);
-
         return response()->json([
             'success' => true,
             'fiscal_key' => $user->fiscal_key
@@ -122,8 +125,6 @@ class AuthController
         $user->transaction_key_enabled = !$user->transaction_key_enabled;
         $user->save();
 
-        LogHelper::log('users', "Toggled transaction key. New state: " . ($user->transaction_key_enabled ? 'Enabled' : 'Disabled'), request()->user()->id, $user->id);
-
         return response()->json([
             'success' => true,
             'transaction_key_enabled' => $user->transaction_key_enabled
@@ -143,8 +144,6 @@ class AuthController
 
         $user->fiscal_key_enabled = !$user->fiscal_key_enabled;
         $user->save();
-
-        LogHelper::log('users', "Toggled fiscal key. New state: " . ($user->fiscal_key_enabled ? 'Enabled' : 'Disabled'), request()->user()->id, $user->id);
 
         return response()->json([
             'success' => true,

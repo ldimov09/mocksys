@@ -98,7 +98,7 @@
 <body>
 
     <div class="container">
-        @if (session('success') || session('error') || $errors->any())
+        @if (session('success') || session('error') || $errors->any() ?? false)
             <div class="ui container" style="margin-top: 1em;">
                 @if (session('success'))
                     <div class="ui-widget" id="global-message" title="Click to close">

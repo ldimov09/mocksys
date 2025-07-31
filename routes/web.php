@@ -10,9 +10,26 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\FiscalRecordController;
 use App\Http\Controllers\TransactionController;
 
+use Composer\Autoload\ClassLoader;
+use Illuminate\Support\Facades\Log;
+
 Route::get('/', function () {
+
+
+    // $results = [];
+
+    // $results['autoload.php'] = file_exists(base_path('vendor/autoload.php'));
+    // $results['autoload_classmap.php'] = file_exists(base_path('vendor/composer/autoload_classmap.php'));
+    // $results['autoload_static.php'] = file_exists(base_path('vendor/composer/autoload_static.php'));
+    // $results['ClassLoader loaded'] = class_exists(ClassLoader::class);
+    // $results['App\Http\Controllers\AuthController exists'] = class_exists(\App\Http\Controllers\AuthController::class);
+    // Log::debug('Log working!');
+
+    // return response()->json($results);    
+
     return view('welcome');
 });
+
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
