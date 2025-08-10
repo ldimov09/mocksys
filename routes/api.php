@@ -21,12 +21,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/transfer', [TransferController::class, 'transfer']);
     Route::get('/users/{accountNumber}', [AuthController::class, 'show']);
     Route::apiResource('items', ItemController::class);
-
+    
+    Route::post('/keys/transaction/toggle', [AuthController::class, 'toggleTransactionKey'])->name('keys.transaction.toggle');
+    Route::post('/keys/fiscal/toggle', [AuthController::class, 'toggleFiscalKey'])->name('keys.fiscal.toggle');
     Route::middleware('role:business')->group(function(){
         Route::post('/keys/transaction/reset', [AuthController::class, 'resetTransactionKey'])->name('keys.transaction.reset');
         Route::post('/keys/fiscal/reset', [AuthController::class, 'resetFiscalKey'])->name('keys.fiscal.reset');
-        Route::post('/keys/transaction/toggle', [AuthController::class, 'toggleTransactionKey'])->name('keys.transaction.toggle');
-        Route::post('/keys/fiscal/toggle', [AuthController::class, 'toggleFiscalKey'])->name('keys.fiscal.toggle');
     });
 
     Route::prefix('company')->group(function () {
