@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\TransferController;
 use App\Http\Controllers\Api\FiscalRecordController;
 use App\Http\Controllers\Api\ItemController;
+use App\Http\Controllers\Api\NonceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -16,6 +17,7 @@ Route::post('/card-payment', [CardPaymentController::class, 'process']);
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/nonce', [NonceController::class, 'getNonce']);
     Route::post('/transfer', [TransferController::class, 'transfer']);
     Route::get('/users/{accountNumber}', [AuthController::class, 'show']);
     Route::apiResource('items', ItemController::class);

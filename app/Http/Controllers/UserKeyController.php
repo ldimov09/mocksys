@@ -19,7 +19,7 @@ class UserKeyController extends Controller
     {
         $user = $this->userRepository->getUserById($id);
 
-        $this->authorizeBusiness($user);
+        //$this->authorizeBusiness($user);
 
         if ($user->keys_locked_by_admin) {
             return response()->json(['error' => 'Key is locked by admin.'], 403);
@@ -57,7 +57,7 @@ class UserKeyController extends Controller
     {
         $user = $this->userRepository->getUserById($id);
 
-        $this->authorizeBusiness($user);
+        //$this->authorizeBusiness($user);
         
         if ($user->keys_locked_by_admin) {
             return response()->json(['error' => 'Key is locked by admin.'], 403);
