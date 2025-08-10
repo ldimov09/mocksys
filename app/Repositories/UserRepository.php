@@ -16,6 +16,6 @@ class UserRepository
      */
     public function getUserById($userId)
     {
-        return $this->userModel->find($userId)->first();
+        return $this->userModel->find($userId);
     }
 }

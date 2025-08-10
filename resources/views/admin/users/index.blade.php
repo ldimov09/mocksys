@@ -56,6 +56,13 @@
 
             $(".key-btn").on("click", function() {
                 currentUserId = $(this).data("user-id");
+                userRole = $(this).data("user-role");
+
+                if(userRole == "business"){
+                    $("#fiscalKey").css("display", "block");
+                } else {
+                    $("#fiscalKey").css("display", "none");
+                }
 
                 // Fill in modal values
                 $("#modal-user-name").text($(this).data("user-name"));
@@ -228,17 +235,16 @@
                                     <span class="ui-icon ui-icon-pencil"></span>
                                 </button>
                             </a>
-                            @if ($user->role === 'business')
-                                <button class="ui ui-button ui-corner-all key-btn" data-user-id="{{ $user->id }}"
-                                    data-user-name="{{ $user->name }}"
-                                    data-transaction-key="{{ $user->transaction_key }}"
-                                    data-fiscal-key="{{ $user->fiscal_key }}"
-                                    data-transaction-enabled="{{ $user->transaction_key_enabled }}"
-                                    data-fiscal-enabled="{{ $user->fiscal_key_enabled }}"
-                                    data-locked="{{ $user->keys_locked_by_admin }}" title="Manage Keys">
-                                    <span class="ui-icon ui-icon-key"></span>
-                                </button>
-                            @endif
+                            <button class="ui ui-button ui-corner-all key-btn" data-user-id="{{ $user->id }}"
+                                data-user-name="{{ $user->name }}"
+                                data-user-role="{{ $user->role }}"
+                                data-transaction-key="{{ $user->transaction_key }}"
+                                data-fiscal-key="{{ $user->fiscal_key }}"
+                                data-transaction-enabled="{{ $user->transaction_key_enabled }}"
+                                data-fiscal-enabled="{{ $user->fiscal_key_enabled }}"
+                                data-locked="{{ $user->keys_locked_by_admin }}" title="Manage Keys">
+                                <span class="ui-icon ui-icon-key"></span>
+                            </button>
                             @if ($user->role !== 'admin')
                                 <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
                                     style="display:inline;" class="delete-user-form">
@@ -268,8 +274,7 @@
                     <button class="ui ui-button ui-corner-all" id="toggle-transaction-key">Disable</button>
                 </div>
             </div>
-
-            <div class="field">
+            <div class="field" id="fiscalKey">
                 <label>Fiscal Key</label>
                 <small style="color: red" class="fiscal-key-disabled-text">Disabled</small>
                 <input type="text" id="fiscal-key" readonly>
