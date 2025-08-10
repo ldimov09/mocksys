@@ -43,6 +43,7 @@ class User extends Authenticatable
         'password',
         "role",
         "account_number",
+        "company_id",
         "user_name",
         "balance",
         "status",
@@ -115,5 +116,10 @@ class User extends Authenticatable
             $this->fiscal_key_enabled = true;
             $this->save();
         }
+    }
+
+    public function company()
+    {
+        return $this->hasOne(Company::class, 'id', 'company_id');
     }
 }

@@ -18,7 +18,7 @@ class AuthController
             'password' => 'required|string',
         ]);
 
-        $user = User::where('user_name', $credentials['user_name'])->first();
+        $user = User::where('user_name', $credentials['user_name'])->with('company')->first();
 
         if ($user && Hash::check($credentials['password'], (string) $user->password)) {
             if (!$user->status->isEnabled()) {

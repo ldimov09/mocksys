@@ -5,13 +5,20 @@ namespace App\Http\Controllers;
 use App\Helpers\LogHelper;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class UserKeyController extends Controller
 {
-    public function resetTransactionKey(User $user)
+    public function __construct(
+        protected UserRepository $userRepository
+    ) {}
+
+    public function resetTransactionKey(int $id)
     {
+        $user = $this->userRepository->getUserById($id);
+
         $this->authorizeBusiness($user);
 
         if ($user->keys_locked_by_admin) {
@@ -27,8 +34,10 @@ class UserKeyController extends Controller
         return response()->json(['transaction_key' => $user->transaction_key]);
     }
 
-    public function resetFiscalKey(User $user)
+    public function resetFiscalKey(int $id)
     {
+        $user = $this->userRepository->getUserById($id);
+
         $this->authorizeBusiness($user);
 
         if ($user->keys_locked_by_admin) {
@@ -44,10 +53,12 @@ class UserKeyController extends Controller
         return response()->json(['fiscal_key' => $user->fiscal_key]);
     }
 
-    public function toggleTransactionKey(User $user)
+    public function toggleTransactionKey(int $id)
     {
-        $this->authorizeBusiness($user);
+        $user = $this->userRepository->getUserById($id);
 
+        $this->authorizeBusiness($user);
+        
         if ($user->keys_locked_by_admin) {
             return response()->json(['error' => 'Key is locked by admin.'], 403);
         }
@@ -60,8 +71,10 @@ class UserKeyController extends Controller
         return response()->json(['enabled' => $user->transaction_key_enabled]);
     }
 
-    public function toggleFiscalKey(User $user)
+    public function toggleFiscalKey(int $id)
     {
+        $user = $this->userRepository->getUserById($id);
+        
         $this->authorizeBusiness($user);
 
         if ($user->keys_locked_by_admin) {
@@ -76,8 +89,10 @@ class UserKeyController extends Controller
         return response()->json(['enabled' => $user->fiscal_key_enabled]);
     }
 
-    public function toggleLock(Request $request, User $user)
+    public function toggleLock(Request $request, int $id)
     {
+        $user = $this->userRepository->getUserById($id);
+
         $data = $request->validate([
             'locked' => 'required|boolean',
         ]);
