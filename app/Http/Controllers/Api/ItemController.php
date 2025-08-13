@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Repositories\CompanyRepository;
 use Illuminate\Http\Request;
 use App\Repositories\ItemRepository;
 use App\Models\Item;
+use App\Repositories\DeviceRepository;
 use Illuminate\Validation\Rule;
 
 class ItemController extends Controller
 {
-    public function __construct(private ItemRepository $repo) {}
+    public function __construct(private ItemRepository $repo, private CompanyRepository $companyRepository, private DeviceRepository $deviceRepository) {}
 
     public function index(Request $request)
     {
@@ -18,6 +20,35 @@ class ItemController extends Controller
             $this->repo->listByUser($request->user()->id)
         );
     }
+
+    public function getForCompany(int $id, Request $request)
+    {
+        $deviceKey = $request->header('X-Device-Key');
+
+        if (!$deviceKey) {
+            return response()->json(['message' => 'Missing device key'], 400);
+        }
+
+        $device = $this->deviceRepository->findByKey($deviceKey);
+
+        if (!$device || $device->status != "enabled") {
+            return response()->json(['message' => 'Invalid or disabled device.'], 403);
+        }
+
+        $company = $this->companyRepository->findById($id);
+        if (!$company) {
+            return response()->json(['message' => 'Company not found'], 404);
+        }
+
+        if ($device->user_id !== $company->account_id) {
+            return response()->json(['message' => 'Device not authorized for this company'], 403);
+        }
+
+        return response()->json(
+            $this->repo->listByUser($device->user_id)
+        );
+    }
+
 
     public function store(Request $request)
     {

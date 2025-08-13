@@ -11,6 +11,11 @@ class CompanyRepository
         return Company::where('account_id', $userId)->first();
     }
 
+    public function findById(int $id)
+    {
+        return Company::find($id);
+    }
+
     public function createForUser(int $userId, array $data)
     {
         return Company::create(array_merge($data, ['account_id' => $userId]));

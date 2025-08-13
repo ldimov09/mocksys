@@ -80,7 +80,7 @@ class AuthController
             ], 403);
         }
 
-        $user->transaction_key = Str::random(32);
+        $user->transaction_key = Str::random(12);
         $user->transaction_key_enabled = true;
         $user->save();
 
@@ -101,7 +101,7 @@ class AuthController
             ], 403);
         }
 
-        $user->fiscal_key = Str::random(32);
+        $user->fiscal_key = Str::random(12);
         $user->fiscal_key_enabled = true;
         $user->save();
 

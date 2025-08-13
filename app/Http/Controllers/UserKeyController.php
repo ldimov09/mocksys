@@ -25,7 +25,7 @@ class UserKeyController extends Controller
             return response()->json(['error' => 'Key is locked by admin.'], 403);
         }
 
-        $user->transaction_key = Str::random(32);
+        $user->transaction_key = Str::random(12);
         $user->transaction_key_enabled = true;
         $user->save();
 
@@ -44,7 +44,7 @@ class UserKeyController extends Controller
             return response()->json(['error' => 'Key is locked by admin.'], 403);
         }
 
-        $user->fiscal_key = Str::random(32);
+        $user->fiscal_key = Str::random(12);
         $user->fiscal_key_enabled = true;
         $user->save();
 
