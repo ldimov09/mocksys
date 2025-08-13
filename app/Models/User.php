@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 /**
  * User model
  * @property int $id
+ * @property int $company_id
  * @property string $name
  * @property string $user_name
  * @property string $email

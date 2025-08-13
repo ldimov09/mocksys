@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\CompanyDigitHelper;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Repositories\CompanyRepository;
@@ -49,7 +50,7 @@ class CompanyController extends Controller
 
         // Generate EIK number: pad to 8 digits + 1 check digit
         $baseNumber = str_pad($company->id, 8, '0', STR_PAD_LEFT);
-        $checkDigit = $this->calculateEIKCheckDigit($baseNumber);
+        $checkDigit = CompanyDigitHelper::calculateEIKCheckDigit($baseNumber);
         $fullNumber = $baseNumber . $checkDigit;
 
         // Save it
@@ -90,33 +91,5 @@ class CompanyController extends Controller
         $this->companyRepo->delete($company->id);
 
         return response()->json(['message' => 'Company deleted.']);
-    }
-
-    /**
-     * Calculates EIK check digit for the first 8 digits
-     */
-    private function calculateEIKCheckDigit(string $eik8): int
-    {
-        $digits = str_split($eik8);
-
-        $coeffs1 = [1, 2, 3, 4, 5, 6, 7, 8];
-        $sum1 = 0;
-        for ($i = 0; $i < 8; $i++) {
-            $sum1 += $digits[$i] * $coeffs1[$i];
-        }
-
-        $remainder = $sum1 % 11;
-        if ($remainder < 10) {
-            return $remainder;
-        }
-
-        $coeffs2 = [3, 4, 5, 6, 7, 8, 9, 10];
-        $sum2 = 0;
-        for ($i = 0; $i < 8; $i++) {
-            $sum2 += $digits[$i] * $coeffs2[$i];
-        }
-
-        $remainder2 = $sum2 % 11;
-        return $remainder2 < 10 ? $remainder2 : 0;
     }
 }

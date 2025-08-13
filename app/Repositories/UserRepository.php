@@ -18,4 +18,9 @@ class UserRepository
     {
         return $this->userModel->find($userId);
     }
+
+    public function checkNumber($number)
+    {
+        return !User::where('account_number', $number)->first();
+    }
 }

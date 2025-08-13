@@ -9,10 +9,17 @@ use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\TransferController;
 use App\Http\Controllers\Api\CardPaymentController;
 use App\Http\Controllers\Api\FiscalRecordController;
+use App\Http\Controllers\Api\RegistrationController;
 
 Route::post('/fiscalize', [FiscalRecordController::class, 'process']);
 Route::post('/card-payment', [CardPaymentController::class, 'process']);
 Route::post('/login', [AuthController::class, 'login']);
+
+Route::post('/register/full', [RegistrationController::class, 'fullRegister']);
+
+Route::get('/device/{deviceKey}', [DeviceController::class, 'getDeviceData']);
+
+//Require device_key
 Route::get('/items/{id}', [ItemController::class, 'getForCompany']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -40,5 +47,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/', [CompanyController::class, 'update']);
         Route::delete('/', [CompanyController::class, 'destroy']);
     });
+
 });
     

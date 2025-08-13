@@ -31,4 +31,9 @@ class ItemRepository
     {
         return Item::where('id', $id)->where('user_id', $userId)->firstOrFail();
     }
+
+    public function checkNumber($number)
+    {
+        return !Item::where('number', $number)->first();
+    }
 }

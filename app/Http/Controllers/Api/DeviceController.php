@@ -6,10 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Http\Controllers\Controller;
 use App\Repositories\DeviceRepository;
+use App\Repositories\UserRepository;
 
 class DeviceController extends Controller
 {
-    public function __construct(private DeviceRepository $repo) {}
+    public function __construct(
+        private DeviceRepository $repo,
+        private UserRepository $userRepository
+    ) {}
 
     public function index(Request $request)
     {
@@ -33,7 +37,7 @@ class DeviceController extends Controller
         ]);
 
         $validated['user_id'] = $request->user()->id;
-        $validated['device_key'] = bin2hex(random_bytes(4));
+        $validated['device_key'] = bin2hex(random_bytes(8));
 
         return response()->json(
             $this->repo->create($validated),
@@ -64,7 +68,7 @@ class DeviceController extends Controller
         ]);
 
         if($request->get("new_key") ?? false){
-            $validated['device_key'] = bin2hex(random_bytes(4));
+            $validated['device_key'] = bin2hex(random_bytes(8));
         }
 
         return response()->json($this->repo->update($device, $validated));
@@ -76,5 +80,29 @@ class DeviceController extends Controller
         $this->repo->delete($device);
 
         return response()->noContent();
+    }
+
+    public function getDeviceData($deviceKey)
+    {
+        $device = $this->repo->findByKey($deviceKey);
+        if (!$device) {
+            return response()->json(['message' => 'Device not found'], 404);
+        }
+
+        $user = $this->userRepository->getUserById($device->user_id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $companyId = $user->company_id;
+
+        return response()->json([
+            'company_id' => $companyId,
+            'user_id' => $user->id,
+            'user_account_number' => $user->account_number,
+            'device_key' => $device->device_key,
+            'transaction_key' => $user->transaction_key,
+            'fiscal_key' => $user->fiscal_key,
+        ]);
     }
 }
