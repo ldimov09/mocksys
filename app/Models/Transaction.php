@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property number $amount
  * @property string $status
  * @property string $signature
+ * @property string $nonce
  * @property string $type
  * @property string $error
  */
@@ -24,7 +25,8 @@ class Transaction extends Model
         'amount',
         'status',
         'signature',
-        'type'
+        'type',
+        "nonce",
     ];
 
     /**
@@ -37,6 +39,7 @@ class Transaction extends Model
             'receiver_id' => $this->receiver_id,
             'amount'      => number_format((float) $this->amount, 2, '.', ''),
             'type'        => $this->type,
+            'nonce'       => $this->nonce,
         ];
 
         ksort($data);

@@ -23,17 +23,7 @@ class ItemController extends Controller
 
     public function getForCompany(int $id, Request $request)
     {
-        $deviceKey = $request->header('X-Device-Key');
-
-        if (!$deviceKey) {
-            return response()->json(['message' => 'Missing device key'], 400);
-        }
-
-        $device = $this->deviceRepository->findByKey($deviceKey);
-
-        if (!$device || $device->status != "enabled") {
-            return response()->json(['message' => 'Invalid or disabled device.'], 403);
-        }
+        $device = $request->get('device');
 
         $company = $this->companyRepository->findById($id);
         if (!$company) {

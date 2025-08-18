@@ -11,22 +11,25 @@ use App\Http\Controllers\Api\CardPaymentController;
 use App\Http\Controllers\Api\FiscalRecordController;
 use App\Http\Controllers\Api\RegistrationController;
 
-Route::post('/fiscalize', [FiscalRecordController::class, 'process']);
-Route::post('/card-payment', [CardPaymentController::class, 'process']);
+Route::middleware('verify.device')->withoutMiddleware('auth:sanctum')->group(function () {
+    Route::post('/fiscalize', [FiscalRecordController::class, 'process']);
+    Route::post('/card-payment', [CardPaymentController::class, 'process']);
+    Route::get('/items/{id}', [ItemController::class, 'getForCompany']);
+    Route::get('/nonce', [NonceController::class, 'getNonce']);
+});
+
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::post('/register/full', [RegistrationController::class, 'fullRegister']);
 
 Route::get('/device/{deviceKey}', [DeviceController::class, 'getDeviceData']);
 
-//Require device_key
-Route::get('/items/{id}', [ItemController::class, 'getForCompany']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/nonce', [NonceController::class, 'getNonce']);
     Route::post('/transfer', [TransferController::class, 'transfer']);
     Route::get('/users/{accountNumber}', [AuthController::class, 'show']);
     Route::apiResource('items', ItemController::class);
+    Route::get('/transfers', [TransferController::class, 'index']);
 
     Route::get('/devices', [DeviceController::class, 'index']);
     Route::post('/devices', [DeviceController::class, 'store']);

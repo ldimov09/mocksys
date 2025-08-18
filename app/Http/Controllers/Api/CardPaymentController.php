@@ -8,25 +8,36 @@ use App\Models\User;
 use App\Enums\UserStatus;
 use App\Helpers\LogHelper;
 use App\Models\Transaction;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\TransactionHelper;
 use App\Http\Controllers\Controller;
+use App\Repositories\DeviceRepository;
+use App\Services\NonceService;
+use Illuminate\Log\Logger;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class CardPaymentController extends Controller
 {
+    public function __construct(
+        private NonceService $nonceService,
+        private DeviceRepository $deviceRepository
+    ) {}
+
     public function process(Request $request)
     {
+        Log::info("TRANSACTION INIT");
         try {
             $validated = $request->validate([
                 'sender_account_number' => 'required|string|exists:users,account_number',
-                'receiver_account_number' => 'required|string|exists:users,account_number',
+                "merchant_id" => "string|exists:companies,id",
                 'amount' => 'required|numeric|min:0.01',
                 'transaction_key' => 'required|string',
-                'sender_pin' => 'required|string'
+                'sender_pin' => 'required|string',
+                'nonce' => "required|string",
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -39,12 +50,38 @@ class CardPaymentController extends Controller
         DB::beginTransaction();
 
         try {
+            Log::info("TRANSACTION VALIDATION ".$validated["merchant_id"]." before: nonce");
+            if(!$this->nonceService->validate($validated['nonce'], "transaction")){
+                return response()->json([
+                    'success' => false,
+                    'short_error' => 'Invalid nonce.',
+                    'error' => 'Invalid or expired nonce.'
+                ], 401);
+            }
+            
+            $device = $request->get("device");
+
+            Log::info("TRANSACTION VALIDATION ".$validated["merchant_id"]." before: device", [
+                "device" => $device,
+            ]);
+            if(!$this->deviceRepository->doesBelongToCompany($device, $validated["merchant_id"])){
+                return response()->json([
+                    'success' => false,
+                    'short_error' => 'Device error.',
+                    'error' => 'Device does not belong to the given merchant.'
+                ], 401);
+            }
+
+            Log::info("TRANSACTION VALIDATION ".$validated["merchant_id"]." before: getting users");
             $sender = User::where('account_number', $validated['sender_account_number'])->first();
-            $receiver = User::where('account_number', $validated['receiver_account_number'])->first();
+            $receiver = User::where('company_id', $validated['merchant_id'])->first();
 
             // Save the transaction as pending
             $transaction = TransactionHelper::logTransaction($sender->id, $receiver->id, $validated['amount'], 'pending', 'card_payment');
 
+            $transaction->nonce = $validated["nonce"];
+
+            Log::info("TRANSACTION VALIDATION ".$validated["merchant_id"]." before: keys");
             // Check if receiver has a matching transaction key and it's enabled
             if (
                 $receiver->transaction_key !== $validated['transaction_key'] ||
@@ -61,6 +98,7 @@ class CardPaymentController extends Controller
                 ], 403);
             }
 
+            Log::info("TRANSACTION VALIDATION ".$validated["merchant_id"]." before: active check");
             // Check if receiver or sender is inactive
             if (!$receiver->status->isActive()) {
                 $transaction->status = 'declined';
@@ -86,6 +124,7 @@ class CardPaymentController extends Controller
                 ], 403);
             }
 
+            Log::info("TRANSACTION VALIDATION ".$validated["merchant_id"]." before: pin");
             // Check sender’s PIN
             if (!Hash::check($validated['sender_pin'], $sender->password)) {
                 $transaction->status = 'declined';
@@ -99,6 +138,7 @@ class CardPaymentController extends Controller
                 ], 403);
             }
 
+            Log::info("TRANSACTION VALIDATION ".$validated["merchant_id"]." before: amount");
             // Check if sender has sufficient funds
             if ($sender->balance < $validated['amount']) {
                 $transaction->status = 'declined';
@@ -112,6 +152,7 @@ class CardPaymentController extends Controller
                 ], 403);
             }
 
+            Log::info("TRANSACTION EXECUTION ".$validated["merchant_id"]." before: transfer", [$transaction]);
             // Perform the actual transfer
             $sender->balance -= $validated['amount'];
             $receiver->balance += $validated['amount'];
@@ -120,19 +161,22 @@ class CardPaymentController extends Controller
 
             // Approve and sign the transaction
             $transaction->status = 'approved';
+            $transaction->signature = $transaction->generateExpectedSignature();
             $transaction->save();
 
             DB::commit();
 
+            Log::info("TRANSACTION RESPONSE ".$validated["merchant_id"]." before: response");
             return response()->json([
                 'success' => true,
                 'transaction_id' => $transaction->id,
                 'signature' => $transaction->signature
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            LogHelper::log('error', 'Unexpected error during transaction #' . $transaction->id ?? 'none' . ' processing: ' . $e->getMessage(), null, null);
-
+            LogHelper::log('error', 'Unexpected error during transaction #' . ($transaction->id ?? 'none') . ' processing: ' . $e->getMessage(), null, null);
+            Log::info("TRANSACTION ERROR");
+            Log::error($e->getMessage());
             return response()->json([
                 'success' => false,
                 'short_error' => 'Unexpected error',

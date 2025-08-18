@@ -29,7 +29,7 @@ class ItemRepository
 
     public function findByIdForUser($id, $userId)
     {
-        return Item::where('id', $id)->where('user_id', $userId)->firstOrFail();
+        return Item::where('id', $id)->where('user_id', $userId)->first();
     }
 
     public function checkNumber($number)

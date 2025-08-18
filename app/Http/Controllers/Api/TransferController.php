@@ -6,12 +6,19 @@ use App\Helpers\LogHelper;
 use App\Helpers\TransactionHelper;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Repositories\TransactionRepository;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class TransferController extends Controller
 {
+    public function __construct(
+        private TransactionRepository $transactionRepository
+    ) {}
+
     public function transfer(Request $request)
     {
         $data = $request->validate([
@@ -124,5 +131,27 @@ class TransferController extends Controller
                 'error' => "Unexpected error!",
             ], 500);
         }
+    }
+
+    public function index()
+    {
+        try{
+            $user = request()->user();
+
+            $result = $this->transactionRepository->getByUser($user->id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $result
+            ], 200);
+        } catch (Exception $e) {
+            Log::log('laravel', "ERROR ".$e->getMessage(), []);
+
+            return response()->json([
+                'success' => false,
+                'error' => "Unexpected error!",
+            ], 500);
+        }
+
     }
 }

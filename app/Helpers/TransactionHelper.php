@@ -24,6 +24,7 @@ class TransactionHelper
             'receiver_id' => $receiverId,
             'amount'      => number_format((float) $amount, 2, '.', ''),
             'type'        => $type,
+            "nonce"       => "none"
         ]);
 
         return Transaction::create([
@@ -33,6 +34,7 @@ class TransactionHelper
             'status'      => $status,
             'signature'   => $signature,
             'type'        => $type,
+            "nonce"       => "none"
         ]);
     }
 

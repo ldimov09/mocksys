@@ -3,6 +3,7 @@
 use Dotenv\Dotenv;
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\Api\RoleMiddleware;
+use App\Http\Middleware\VerifyDevice;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -32,6 +33,7 @@ return $app->configure(basePath: $basePath)
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'role' => RoleMiddleware::class,
+            "verify.device" => VerifyDevice::class
         ]);
 
         $middleware->group('web', [

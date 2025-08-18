@@ -2,7 +2,9 @@
 
 namespace App\Repositories;
 
+use App\Models\Company;
 use App\Models\Device;
+use Illuminate\Support\Facades\Log;
 
 class DeviceRepository
 {
@@ -35,5 +37,11 @@ class DeviceRepository
     public function findByKey(string $key)
     {
         return Device::where('device_key', $key)->firstOrFail();
+    }
+
+    public function doesBelongToCompany(Device $device, int $companyId)
+    {
+        $company = Company::find($companyId);
+        return $device->user_id == $company->account_id;
     }
 }

@@ -5,33 +5,39 @@ namespace App\Http\Controllers\Api;
 use App\Models\User;
 use App\Helpers\LogHelper;
 use App\Helpers\RefundTransactionHelper;
+use App\Helpers\TransactionHelper;
 use App\Models\Transaction;
 use App\Models\FiscalRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
+use App\Repositories\ItemRepository;
+use App\Services\NonceService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class FiscalRecordController extends Controller
 {
+    public function __construct(
+        private NonceService $nonceService,
+        private ItemRepository $itemRepository
+    ) {}
+
     public function process(Request $request)
     {
         try {
             $validated = $request->validate([
                 'transaction_id' => 'nullable|integer|exists:transactions,id',
-                'business_account_number' => 'required|string|exists:users,account_number',
                 'total' => 'required|numeric|min:0.01',
                 'fiscal_key' => 'required|string',
-                'items' => 'required|json',
+                'items' => 'required|json', // JSON array: [{ "id": 1, "quantity": 2 }, ...]
                 'payment' => 'required|string|in:card,cash',
-                'company_number' => 'required|string',
+                'company_id' => 'required|integer|exists:companies,id',
                 'cash_register' => 'required|integer',
-                'shop_number' => 'required|integer',
-                'operator_name' => 'required|string',
                 'paid' => 'nullable|numeric|min:0.01|required_if:payment,cash',
+                'nonce' => 'required|string',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -41,52 +47,73 @@ class FiscalRecordController extends Controller
             ], 400);
         }
 
+        Log::info("BEGIN FISCALIZATION", []);
         DB::beginTransaction();
 
         try {
-            // Step 1: Load Models
-            $business = User::where('account_number', $validated['business_account_number'])->first();
-            $company = Company::where('number', $validated['company_number'])->first();
-            $transaction = $validated['transaction_id'] ? Transaction::find($validated['transaction_id']) : null;
-
-            // Step 2: Validate relationships
-            if (!$business || !$company) {
-                DB::rollBack();
+            // Step 0. Validate nonce
+            if (!$this->nonceService->validate($validated['nonce'], "fiscalization")) {
                 return response()->json([
                     'success' => false,
-                    'short_error' => !$business ? 'Business not found.' : 'Company not found.',
-                    'error' => !$business
-                        ? 'A non-existent business account number was provided.'
-                        : 'A non-existent company number was provided.',
+                    'short_error' => 'Invalid nonce.',
+                    'error' => 'Invalid or expired nonce.'
+                ], 401);
+            }
+
+
+            // Step 1: Get user from device
+            $device = $request->get('device');
+            if (!$device || !isset($device->user_id)) {
+                return response()->json([
+                    'success' => false,
+                    'short_error' => 'Invalid device.',
+                    'error' => 'Device information missing or invalid.',
+                ], 400);
+            }
+
+            $user = User::find($device->user_id);
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'short_error' => 'User not found.',
+                    'error' => 'The user linked to the device could not be found.',
                 ], 404);
             }
 
-            if ($company->account_id !== $business->id) {
-                DB::rollBack();
+            // Step 2: Get company and check ownership
+            $company = Company::find($validated['company_id']);
+            if (!$company || $company->account_id !== $user->id) {
                 return response()->json([
                     'success' => false,
                     'short_error' => 'Company mismatch.',
-                    'error' => 'The company does not belong to the provided business user.',
+                    'error' => 'The company does not belong to the authenticated user.',
                 ], 403);
             }
 
-            // Step 3: Create FiscalRecord with base values
-            $fiscalRecord = new FiscalRecord([
-                'total' => $validated['total'],
-                'items' => $validated['items'],
-                'business_id' => $business->id,
-                'company_id' => $company->id,
-            ]);
+            // Step 3: Get transaction if applicable
+            $transaction = $validated['transaction_id'] ? Transaction::find($validated['transaction_id']) : null;
 
-            $items = json_decode($validated['items'], true);
-            if (!is_array($items)) {
-                $fiscalRecord->status = 'cancelled';
-                $fiscalRecord->error = 'Could not parse the items list properly.';
-                $fiscalRecord->save();
+            // Step 4: If card payment, verify transaction has a valid nonce
+            if ($validated['payment'] === 'card') {
+                if (!$transaction) {
+                    return response()->json([
+                        'success' => false,
+                        'short_error' => 'Transaction not found.',
+                        'error' => 'A non-existent transaction ID was provided.',
+                    ], 404);
+                }
+                if (empty($transaction->nonce) || strtolower($transaction->nonce) === 'none') {
+                    return response()->json([
+                        'success' => false,
+                        'short_error' => 'Missing nonce.',
+                        'error' => 'Transaction nonce is missing or invalid.',
+                    ], 400);
+                }
+            }
 
-                if ($transaction) RefundTransactionHelper::refundTransaction($transaction);
-
-                DB::commit();
+            // Step 5: Parse and validate items
+            $itemsArray = json_decode($validated['items'], true);
+            if (!is_array($itemsArray)) {
                 return response()->json([
                     'success' => false,
                     'short_error' => 'Invalid items.',
@@ -94,127 +121,104 @@ class FiscalRecordController extends Controller
                 ], 400);
             }
 
-            // Step 4: Validate and sum items
             $calculatedTotal = 0;
-            foreach ($items as $item) {
-                if (!isset($item['price'], $item['quantity']) || !is_numeric($item['price']) || !is_numeric($item['quantity'])) {
-                    $fiscalRecord->status = 'cancelled';
-                    $fiscalRecord->error = 'Each item must include a numeric price and quantity.';
-                    $fiscalRecord->save();
+            Log::info("ITEMS", $itemsArray);
+            $groupedItems = [];
 
-                    if ($transaction) RefundTransactionHelper::refundTransaction($transaction);
-
-                    DB::commit();
+            foreach ($itemsArray as $item) {
+                if (!isset($item['item_id'], $item['quantity']) || !is_numeric($item['quantity'])) {
                     return response()->json([
                         'success' => false,
                         'short_error' => 'Invalid item entry.',
-                        'error' => 'Each item must include a numeric price and quantity.',
+                        'error' => 'Each item must include an id and numeric quantity.',
                     ], 400);
                 }
-                $calculatedTotal += $item['price'] * $item['quantity'];
+
+                $dbItem = $this->itemRepository->findByIdForUser($item['item_id'], $user->id);
+                if (!$dbItem) {
+                    return response()->json([
+                        'success' => false,
+                        'short_error' => 'Item not found.',
+                        'error' => "Item ID {$item['item_id']} does not belong to this user.",
+                    ], 403);
+                }
+
+                // If already in grouped array, just add to the quantity
+                if (isset($groupedItems[$dbItem->id])) {
+                    $groupedItems[$dbItem->id]['quantity'] += $item['quantity'];
+                } else {
+                    $groupedItems[$dbItem->id] = [
+                        'id' => $dbItem->id,
+                        'name' => $dbItem->name,
+                        'unit' => $dbItem->unit,
+                        'price' => $dbItem->price,
+                        'quantity' => $item['quantity'],
+                    ];
+                }
             }
 
-            $calculatedTotal = round($calculatedTotal, 2);
-            $expectedTotal = round($validated['total'], 2);
+            // Now compute totals after grouping
+            foreach ($groupedItems as $gItem) {
+                $calculatedTotal += $gItem['price'] * $gItem['quantity'];
+            }
 
-            if (abs($calculatedTotal - $expectedTotal) > 0.01) {
-                $fiscalRecord->status = 'cancelled';
-                $fiscalRecord->error = "Items subtotal ($calculatedTotal) does not match the declared total ($expectedTotal).";
-                $fiscalRecord->save();
-                DB::commit();
+            $fetchedItems = array_values($groupedItems); // reindex numerically if needed
+
+            $calculatedTotal = round($calculatedTotal, 2);
+            if (abs($calculatedTotal - round($validated['total'], 2)) > 0.01) {
                 return response()->json([
                     'success' => false,
                     'short_error' => 'Items total mismatch.',
-                    'error' => "Items subtotal ($calculatedTotal) does not match the declared total ($expectedTotal).",
+                    'error' => "Items subtotal ($calculatedTotal) does not match the declared total ({$validated['total']}).",
                 ], 400);
             }
 
-            if ($validated['paid'] && round($validated['paid'], 2) < $expectedTotal) {
-                $fiscalRecord->status = 'cancelled';
-                $fiscalRecord->error = "Cash paid for items (" . round($validated['paid'], 2) . ") is less than the given total $expectedTotal.";
-                $fiscalRecord->save();
-                DB::commit();
+            if ($validated['paid'] && round($validated['paid'], 2) < $validated['total']) {
                 return response()->json([
                     'success' => false,
                     'short_error' => 'Paid amount issue.',
-                    'error' => "Cash paid for items ({$validated['paid']}) is less than the given total $expectedTotal.",
+                    'error' => "Cash paid ({$validated['paid']}) is less than the total {$validated['total']}.",
                 ], 400);
             }
 
-            // Step 5: Payment-specific logic
+            // Step 6: Payment-specific checks (same as before, but skipping for brevity)
             if ($validated['payment'] === 'card') {
-                if (!$transaction) {
-                    $fiscalRecord->status = 'cancelled';
-                    $fiscalRecord->error = 'Transaction not found.';
-                    $fiscalRecord->save();
-                    DB::commit();
-                    return response()->json([
-                        'success' => false,
-                        'short_error' => 'Transaction not found.',
-                        'error' => 'A non-existent transaction ID was provided.',
-                    ], 404);
-                }
 
-                $fiscalRecord->transaction_id = $transaction->id;
+                Log::info("SIGNATURES" . "   " . $transaction->generateExpectedSignature() . "  " . $transaction->signature, [$transaction]);
 
                 if (!$transaction->verifySignature()) {
-                    $fiscalRecord->status = 'cancelled';
-                    $fiscalRecord->error = 'The transaction signature is invalid.';
-                    $fiscalRecord->save();
-                    DB::commit();
                     return response()->json([
                         'success' => false,
                         'short_error' => 'Invalid signature.',
                         'error' => 'The transaction signature is invalid.',
                     ], 400);
                 }
-
                 if ($transaction->status !== 'approved') {
-                    $fiscalRecord->status = 'cancelled';
-                    $fiscalRecord->error = 'Only approved transactions can be fiscalized.';
-                    $fiscalRecord->save();
-                    DB::commit();
                     return response()->json([
                         'success' => false,
                         'short_error' => 'Transaction not approved.',
                         'error' => 'Only approved transactions can be fiscalized.',
                     ], 403);
                 }
-
-                if (floatval($validated['total']) !== floatval($transaction->amount)) {
-                    $fiscalRecord->status = 'cancelled';
-                    $fiscalRecord->error = 'Total does not match the transaction amount.';
-                    $fiscalRecord->save();
-                    DB::commit();
+                Log::info("DEBUG VALUES", [floatval($validated['total']), floatval($transaction->amount)]);
+                if (abs($calculatedTotal - round($transaction->amount, 2)) > 0.01) {
                     return response()->json([
                         'success' => false,
                         'short_error' => 'Amount mismatch.',
                         'error' => 'Total does not match the transaction amount.',
                     ], 400);
                 }
-
                 if (FiscalRecord::where('transaction_id', $transaction->id)->where('status', 'fiscalized')->exists()) {
-                    $fiscalRecord->status = 'cancelled';
-                    $fiscalRecord->error = 'Duplicate fiscal record for this transaction.';
-                    $fiscalRecord->save();
-                    DB::commit();
                     return response()->json([
                         'success' => false,
                         'short_error' => 'Duplicate fiscal record.',
                         'error' => 'Duplicate fiscal record for this transaction.',
                     ], 409);
                 }
-
-                $fiscalRecord->transaction_signature = $transaction->signature;
             }
 
-            // Step 6: Verify fiscal key
-            if (!$business->fiscal_key_enabled || $business->fiscal_key !== $validated['fiscal_key']) {
-                $fiscalRecord->status = 'cancelled';
-                $fiscalRecord->error = 'Fiscal key is incorrect or disabled.';
-                $fiscalRecord->save();
-                if ($transaction) RefundTransactionHelper::refundTransaction($transaction);
-                DB::commit();
+            // Step 7: Verify fiscal key
+            if (!$user->fiscal_key_enabled || $user->fiscal_key !== $validated['fiscal_key']) {
                 return response()->json([
                     'success' => false,
                     'short_error' => 'Fiscal key issue.',
@@ -222,17 +226,26 @@ class FiscalRecordController extends Controller
                 ], 403);
             }
 
-            // Step 7: Finalize
-            $fiscalRecord->status = 'fiscalized';
+            // Step 8: Create fiscal record
+            $fiscalRecord = new FiscalRecord([
+                'total' => $validated['total'],
+                'items' => json_encode($fetchedItems),
+                'business_id' => $user->id,
+                'company_id' => $company->id,
+                'status' => 'fiscalized',
+                'transaction_id' => $transaction->id ?? null,
+                'transaction_signature' => $transaction->signature ?? null,
+            ]);
+
             $fiscalRecord->storeSignature();
             $fiscalRecord->save();
 
             $map = [
-                'ad' => 'PLC',        // Public Limited Company (АД)
-                'ead' => 'Sole PLC',  // Sole-owned Public Limited Company (ЕАД)
-                'eood' => 'Ltd (Sole)', // Sole Proprietor Ltd. (ЕООД)
-                'et' => 'Sole Trader', // Sole Trader (ЕТ)
-                'ood' => 'Ltd',       // Private Limited Company (ООД)
+                'ad' => 'PLC',
+                'ead' => 'Sole PLC',
+                'eood' => 'Ltd (Sole)',
+                'et' => 'Sole Trader',
+                'ood' => 'Ltd',
             ];
 
             $ppml = $this->generateReceipt(
@@ -240,17 +253,18 @@ class FiscalRecordController extends Controller
                 $company->number,
                 $company->address,
                 $validated['cash_register'],
-                $validated['shop_number'],
-                $validated['operator_name'],
-                $items,
-                round($validated['paid'], 2) - round($validated['total'], 2),
+                $device->number, // shop_number from device
+                $device->name,   // operator_name from device
+                $groupedItems,
+                round(($validated['paid'] ?? 0) - $validated['total'], 2),
                 $transaction->sender->account_number ?? null,
                 $transaction->signature ?? null,
                 $fiscalRecord->fiscal_signature,
                 $transaction->id ?? null,
                 $fiscalRecord->id,
                 Carbon::now()->format('d.m.Y H:i:s'),
-                $validated['payment']
+                $validated['payment'],
+                $device->id
             );
 
             DB::commit();
@@ -282,7 +296,7 @@ class FiscalRecordController extends Controller
 
     private function generateReceipt(
         string $companyName,
-        int $companyNumber,
+        string $companyNumber,
         string $address,
         int $cashRegister,
         int $shopNumber,
@@ -295,7 +309,8 @@ class FiscalRecordController extends Controller
         int|null $transactionId,
         int $fiscalRecordId,
         string $date,
-        string $paymentMethod
+        string $paymentMethod,
+        int $deviceId
     ) {
         // Calculate printable length, accounting for <b> tag double-width behavior except spaces
         function printableLength($text)
@@ -343,7 +358,7 @@ class FiscalRecordController extends Controller
         $receipt .= "<center>{$companyName}\n";
         $receipt .= "{$address}\n";
         $receipt .= "UIC: {$companyNumber}\n";
-        $receipt .= "VAT Number: PT{$companyNumber}\n";
+        $receipt .= "VAT Number: FC{$companyNumber}\n";
         $receipt .= "Cash register {$cashRegister}, Store {$shopNumber}, Operator {$operatorName}\n";
         $receipt .= "</center>\n\n";
 
@@ -351,14 +366,15 @@ class FiscalRecordController extends Controller
             $name = $item['name'];
             $quantity = $item['quantity'];
             $price = $item['price'];
+            $unit = $item['unit'];
             $qtyFmt  = number_format($quantity, 3, '.', '');
             $unitFmt = number_format($price,    2, '.', '');
-            $right1  = "x{$qtyFmt} @ {$unitFmt} PSU";
+            $right1  = "x{$qtyFmt} {$unit} @ PSU {$unitFmt}";
             $receipt .= padLine($name, $right1, $lineWidth) . "\n";
 
             $total   = $quantity * $price;
             $totFmt  = number_format($total, 2, '.', '');
-            $receipt .= padLine('', "{$totFmt} PSU", $lineWidth) . "\n";
+            $receipt .= padLine('', "PSU {$totFmt}", $lineWidth) . "\n";
         }
 
         $receipt .= str_repeat('=', $lineWidth) . "\n";
@@ -368,16 +384,16 @@ class FiscalRecordController extends Controller
             $sum += $item['quantity'] * $item['price'];
         }
         $sumFmt = number_format($sum, 2, '.', '');
-        $receipt .= padLine('<b>TOTAL:</b>', "<b>{$sumFmt} PSU</b>", $lineWidth) . "\n";
+        $receipt .= padLine('<b>TOTAL:</b>', "<b>PSU {$sumFmt}</b>", $lineWidth) . "\n";
         $receipt .= str_repeat('=', $lineWidth) . "\n";
 
         if ($paymentMethod === 'cash') {
             $paid = $sumFmt + $change;
-            $receipt .= padLine('Paid (in cash)', "{$paid} PSU", $lineWidth) . "\n";
+            $receipt .= padLine('Paid (in cash)', "PSU {$paid}", $lineWidth) . "\n";
             $changeFmt = number_format($change, 2, '.', '');
-            $receipt .= padLine('Change', "{$changeFmt} PSU", $lineWidth) . "\n\n";
+            $receipt .= padLine('Change', "PSU {$changeFmt}", $lineWidth) . "\n\n";
         } else {
-            $receipt .= padLine('Paid (by card)', "{$sumFmt} PSU", $lineWidth) . "\n\n";
+            $receipt .= padLine('Paid (by card)', "PSU {$sumFmt}", $lineWidth) . "\n\n";
             $receipt .= str_repeat('*', $lineWidth) . "\n";
             $receipt .= centerLine('# MOCKSYS BANK CARD PAYMENT #', $lineWidth) . "\n";
             $receipt .= str_repeat('*', $lineWidth) . "\n";
