@@ -19,7 +19,7 @@ class CompanyController extends Controller
         $company = $this->companyRepo->findByUserId(Auth::id());
 
         if (!$company) {
-            return response()->json(['message' => 'No company found.'], 404);
+            return response()->json(['message' => __('t.company.not_found')], 404);
         }
 
         return response()->json($company);
@@ -35,7 +35,7 @@ class CompanyController extends Controller
         ]);
 
         if ($this->companyRepo->findByUserId(Auth::id())) {
-            return response()->json(['message' => 'Company already exists.'], 409);
+            return response()->json(['message' => __('t.company.already_exists')], 409);
         }
 
         // Create base record without number
@@ -65,7 +65,7 @@ class CompanyController extends Controller
         $company = $this->companyRepo->findByUserId(Auth::id());
 
         if (!$company) {
-            return response()->json(['message' => 'Company not found.'], 404);
+            return response()->json(['message' => __('t.company.not_found')], 404);
         }
 
         $request->validate([
@@ -85,11 +85,11 @@ class CompanyController extends Controller
         $company = $this->companyRepo->findByUserId(Auth::id());
 
         if (!$company) {
-            return response()->json(['message' => 'Company not found.'], 404);
+            return response()->json(['message' => __('t.company.not_found')], 404);
         }
 
         $this->companyRepo->delete($company->id);
 
-        return response()->json(['message' => 'Company deleted.']);
+        return response()->json(['message' => __('t.company.deleted')]);
     }
 }

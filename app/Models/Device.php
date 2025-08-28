@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property int $id
  * @property string $user_id
- * @property string $name
- * @property string $address
+ * @property string $device_name
+ * @property string $device_address
  * @property string $description
  * @property int $number
  * @property string $device_key
@@ -23,8 +23,8 @@ class Device extends Model
 
     protected $fillable = [
         'user_id',
-        'name',
-        'address',
+        'device_name',
+        'device_address',
         'description',
         'number',
         'device_key',

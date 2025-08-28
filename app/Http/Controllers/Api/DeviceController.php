@@ -25,8 +25,8 @@ class DeviceController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string',
-            'address' => 'required|string',
+            'device_name' => 'required|string',
+            'device_address' => 'required|string',
             'description' => 'required|string',
             'number' => [
                 'required',
@@ -56,8 +56,8 @@ class DeviceController extends Controller
         $device = $this->repo->findByIdForUser($id, $request->user()->id);
 
         $validated = $request->validate([
-            'name' => 'required|string',
-            'address' => 'required|string',
+            'device_name' => 'required|string',
+            'device_address' => 'required|string',
             'description' => 'required|string',
             'number' => [
                 'required',
@@ -86,12 +86,12 @@ class DeviceController extends Controller
     {
         $device = $this->repo->findByKey($deviceKey);
         if (!$device) {
-            return response()->json(['message' => 'Device not found'], 404);
+            return response()->json(['message' => __('t.device.not_found')], 404);
         }
 
         $user = $this->userRepository->getUserById($device->user_id);
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => __('t.device.user_not_found')], 404);
         }
 
         $companyId = $user->company_id;

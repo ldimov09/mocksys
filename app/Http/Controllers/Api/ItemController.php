@@ -27,11 +27,11 @@ class ItemController extends Controller
 
         $company = $this->companyRepository->findById($id);
         if (!$company) {
-            return response()->json(['message' => 'Company not found'], 404);
+            return response()->json(['message' => __('t.company.not_found')], 404);
         }
 
         if ($device->user_id !== $company->account_id) {
-            return response()->json(['message' => 'Device not authorized for this company'], 403);
+            return response()->json(['message' => __('t.company.device_not_authorized')], 403);
         }
 
         return response()->json(

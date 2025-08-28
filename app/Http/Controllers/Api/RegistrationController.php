@@ -129,7 +129,7 @@ class RegistrationController extends Controller
         $businessUser['token'] = $token;
 
         return response()->json([
-            'message' => 'Full registration complete.',
+            'message' => __('t.login.register_complete'),
             'user' => $businessUser,
             'company_id' => $company->id,
         ], 201);

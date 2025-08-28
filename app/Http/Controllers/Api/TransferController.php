@@ -26,23 +26,23 @@ class TransferController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'pin' => 'required',
         ]);
-        try {
 
+        try {
             $sender = $request->user();
             $receiver = User::where('account_number', $data["receiver_account"])->first();
 
-            if(!$sender || !$receiver){
+            if (!$sender || !$receiver) {
                 return response()->json([
                     'success' => false,
-                    'error' => 'Sender or receiver do not exist.',
-                ], status: 400);
+                    'error' => __('t.transfer.sender_or_receiver_missing'),
+                ], 400);
             }
 
-            if($sender->id == $receiver->id){
+            if ($sender->id == $receiver->id) {
                 return response()->json([
                     'success' => false,
-                    'error' => 'Sender and receiver cannot match.',
-                ], status: 400);
+                    'error' => __('t.transfer.sender_receiver_match'),
+                ], 400);
             }
 
             $transaction = TransactionHelper::logTransaction($sender->id, $receiver->id, $data['amount'], 'pending', 'transfer');
@@ -50,62 +50,63 @@ class TransferController extends Controller
             // Verify PIN
             if (!Hash::check($data["pin"], $sender->password)) {
                 $transaction->status = 'declined';
-                $transaction->error = "Transfer Ʉ" . $data['amount'] . " to account failed due to invalid PIN.";
+                $transaction->error = __('t.transfer.invalid_pin_detail', ['amount' => $data['amount']]);
                 $transaction->save();
 
                 return response()->json([
                     'success' => false,
-                    'error' => 'Invalid PIN (password).',
-                ], status: 400);
+                    'error' => __('t.transfer.invalid_pin'),
+                ], 400);
             }
 
-            if (0 >= $data["amount"]) {
+            if ($data["amount"] <= 0) {
                 $transaction->status = 'declined';
-                $transaction->error = "Transfer Ʉ" . $data['amount'] . " to account failed due to non-positive amount.";
+                $transaction->error = __('t.transfer.non_positive_detail', ['amount' => $data['amount']]);
                 $transaction->save();
 
                 return response()->json([
                     'success' => false,
-                    'error' => "The amount has to be a positive number!",
-                ], status: 400);
+                    'error' => __('t.transfer.non_positive'),
+                ], 400);
             }
 
-            // Check balance
             if ($sender->balance < $data["amount"]) {
                 $transaction->status = 'declined';
-                $transaction->error = "Transfer Ʉ" . $data['amount'] . " to account failed due to insufficient sender balance of Ʉ" . $sender->balance;
+                $transaction->error = __('t.transfer.insufficient_balance_detail', [
+                    'amount' => $data['amount'],
+                    'balance' => $sender->balance
+                ]);
                 $transaction->save();
 
                 return response()->json([
                     'success' => false,
-                    'error' => "Insufficient balance!",
-                ], status: 400);
+                    'error' => __('t.transfer.insufficient_balance'),
+                ], 400);
             }
 
-            // Check activity
             if (!$sender->status->isActive()) {
                 $transaction->status = 'declined';
-                $transaction->error = "Transfer Ʉ" . $data['amount'] . " to account failed due to inactive sender";
+                $transaction->error = __('t.transfer.inactive_sender_detail', ['amount' => $data['amount']]);
                 $transaction->save();
 
                 return response()->json([
                     'success' => false,
-                    'error' => "Your account is currently inactive!",
+                    'error' => __('t.transfer.inactive_sender'),
                 ], 403);
             }
 
             if (!$receiver->status->isActive()) {
                 $transaction->status = 'declined';
-                $transaction->error = "Transfer Ʉ" . $data['amount'] . " to account failed due to inactive receiver";
+                $transaction->error = __('t.transfer.inactive_receiver_detail', ['amount' => $data['amount']]);
                 $transaction->save();
 
                 return response()->json([
                     'success' => false,
-                    'error' => "The receiver's account is currently inactive!",
+                    'error' => __('t.transfer.inactive_receiver'),
                 ], 400);
             }
 
-            // Do the transfer in a transaction
+            // Do the transfer in a DB transaction
             DB::transaction(function () use ($sender, $receiver, $data, $transaction) {
                 $sender->balance -= $data["amount"];
                 $sender->save();
@@ -119,25 +120,24 @@ class TransferController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => "Transfer successful!",
+                'data' => __('t.transfer.success'),
                 'balance' => $sender->balance,
             ], 200);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             LogHelper::log('error', 'Unexpected error during transfer #' . ($transaction->id ?? 'none') . ' processing: ' . $e->getMessage(), null, null);
 
             return response()->json([
                 'success' => false,
-                'error' => "Unexpected error!",
+                'error' => __('t.transfer.unexpected_error'),
             ], 500);
         }
     }
 
     public function index()
     {
-        try{
+        try {
             $user = request()->user();
-
             $result = $this->transactionRepository->getByUser($user->id);
 
             return response()->json([
@@ -145,13 +145,12 @@ class TransferController extends Controller
                 'data' => $result
             ], 200);
         } catch (Exception $e) {
-            Log::log('laravel', "ERROR ".$e->getMessage(), []);
+            Log::log('laravel', "ERROR " . $e->getMessage(), []);
 
             return response()->json([
                 'success' => false,
-                'error' => "Unexpected error!",
+                'error' => __('t.transfer.unexpected_error'),
             ], 500);
         }
-
     }
 }

@@ -23,7 +23,7 @@ class AuthController
         if ($user && Hash::check($credentials['password'], (string) $user->password)) {
             if (!$user->status->isEnabled()) {
                 LogHelper::log('authentication', "No access granted due to disabled account", $user->id);
-                return back()->with('error', 'No access granted due to disabled account');
+                return back()->with('error', __('t.login.disabled_account'));
             }
 
             LogHelper::log('authentication', "Logged in: User name: " . $credentials['user_name'], $user->id);
@@ -41,7 +41,7 @@ class AuthController
         LogHelper::log('authentication', "Invalid login credentials: User name: " . $credentials['user_name'], null);
         return response()->json([
             'success' => false,
-            'error' => "Invalid login credentials!"
+            'error' => __('t.login.invalid_credentials')
         ], 400);
     }
 
@@ -53,7 +53,7 @@ class AuthController
             if(!$user){
                 return response()->json([
                     'success' => false,
-                    'error' => "User does not exist!"
+                    'error' => __('t.login.user_not_found')
                 ], 404);
             }
 
@@ -64,30 +64,37 @@ class AuthController
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => "Unexpected error!"
+                'error' => __('t.login.unexpected_error')
             ], 500);
         }
     }
 
     public function resetTransactionKey(Request $request)
     {
-        $user = $request->user();
+        try{
+            $user = $request->user();
 
-        if ($user->keys_locked_by_admin) {
+            if ($user->keys_locked_by_admin) {
+                return response()->json([
+                    'success' => false,
+                    'error' => __('t.login.key_locked')
+                ], 403);
+            }
+
+            $user->transaction_key = Str::random(12);
+            $user->transaction_key_enabled = true;
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'transaction_key' => $user->transaction_key
+            ]);
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => 'Key is locked by admin.'
-            ], 403);
+                'error' => __('t.login.unexpected_error')
+            ], 500);
         }
-
-        $user->transaction_key = Str::random(12);
-        $user->transaction_key_enabled = true;
-        $user->save();
-
-        return response()->json([
-            'success' => true,
-            'transaction_key' => $user->transaction_key
-        ]);
     }
 
     public function resetFiscalKey(Request $request)
@@ -97,7 +104,7 @@ class AuthController
         if ($user->keys_locked_by_admin) {
             return response()->json([
                 'success' => false,
-                'error' => 'Key is locked by admin.'
+                'error' => __('t.login.key_locked')
             ], 403);
         }
 
@@ -118,7 +125,7 @@ class AuthController
         if ($user->keys_locked_by_admin) {
             return response()->json([
                 'success' => false,
-                'error' => 'Key is locked by admin.'
+                'error' => __('t.login.key_locked')
             ], 403);
         }
 
@@ -138,7 +145,7 @@ class AuthController
         if ($user->keys_locked_by_admin) {
             return response()->json([
                 'success' => false,
-                'error' => 'Key is locked by admin.'
+                'error' => __('t.login.key_locked')
             ], 403);
         }
 

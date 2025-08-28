@@ -1,15 +1,16 @@
 <?php
 
 use Dotenv\Dotenv;
-use Illuminate\Foundation\Application;
-use App\Http\Middleware\Api\RoleMiddleware;
 use App\Http\Middleware\VerifyDevice;
-use Illuminate\Auth\Middleware\Authenticate;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Application;
+use App\Http\Middleware\Api\SetLocale;
 use Illuminate\Http\Middleware\HandleCors;
-use Illuminate\Routing\Middleware\SubstituteBindings;
+use App\Http\Middleware\Api\RoleMiddleware;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 $basePath = dirname(__DIR__);
 
@@ -47,7 +48,8 @@ return $app->configure(basePath: $basePath)
         $middleware->group('api', [
             HandleCors::class,
             SubstituteBindings::class,
-            ThrottleRequests::class
+            ThrottleRequests::class,
+            SetLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

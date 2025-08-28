@@ -38,6 +38,7 @@ class FiscalRecordController extends Controller
                 'cash_register' => 'required|integer',
                 'paid' => 'nullable|numeric|min:0.01|required_if:payment,cash',
                 'nonce' => 'required|string',
+                'page_width' => "required|numeric|in:58,80"
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -55,9 +56,9 @@ class FiscalRecordController extends Controller
             if (!$this->nonceService->validate($validated['nonce'], "fiscalization")) {
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Invalid nonce.',
-                    'error' => 'Invalid or expired nonce.'
-                ], 401);
+                    'short_error' => __('t.fiscalization.invalid_nonce.short_error'),
+                    'error' => __('t.fiscalization.invalid_nonce.error'),
+                ], status: 401);
             }
 
 
@@ -66,8 +67,8 @@ class FiscalRecordController extends Controller
             if (!$device || !isset($device->user_id)) {
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Invalid device.',
-                    'error' => 'Device information missing or invalid.',
+                    'short_error' => __('t.fiscalization.invalid_device.short_error'),
+                    'error' => __('t.fiscalization.invalid_device.error'),
                 ], 400);
             }
 
@@ -75,8 +76,8 @@ class FiscalRecordController extends Controller
             if (!$user) {
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'User not found.',
-                    'error' => 'The user linked to the device could not be found.',
+                    'short_error' => __('t.fiscalization.user_not_found.short_error'),
+                    'error' => __('t.fiscalization.user_not_found.error'),
                 ], 404);
             }
 
@@ -85,8 +86,8 @@ class FiscalRecordController extends Controller
             if (!$company || $company->account_id !== $user->id) {
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Company mismatch.',
-                    'error' => 'The company does not belong to the authenticated user.',
+                    'short_error' => __('t.fiscalization.company_mismatch.short_error'),
+                    'error' => __('t.fiscalization.company_mismatch.error'),
                 ], 403);
             }
 
@@ -98,15 +99,15 @@ class FiscalRecordController extends Controller
                 if (!$transaction) {
                     return response()->json([
                         'success' => false,
-                        'short_error' => 'Transaction not found.',
-                        'error' => 'A non-existent transaction ID was provided.',
+                        'short_error' => __('t.fiscalization.transaction_not_found.short_error'),
+                        'error' => __('t.fiscalization.transaction_not_found.error'),
                     ], 404);
                 }
                 if (empty($transaction->nonce) || strtolower($transaction->nonce) === 'none') {
                     return response()->json([
                         'success' => false,
-                        'short_error' => 'Missing nonce.',
-                        'error' => 'Transaction nonce is missing or invalid.',
+                        'short_error' => __('t.fiscalization.missing_nonce.short_error'),
+                        'error' => __('t.fiscalization.missing_nonce.error'),
                     ], 400);
                 }
             }
@@ -116,8 +117,8 @@ class FiscalRecordController extends Controller
             if (!is_array($itemsArray)) {
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Invalid items.',
-                    'error' => 'Could not parse the items list properly.',
+                    'short_error' => __('t.fiscalization.invalid_items.short_error'),
+                    'error' => __('t.fiscalization.invalid_items.error'),
                 ], 400);
             }
 
@@ -129,8 +130,8 @@ class FiscalRecordController extends Controller
                 if (!isset($item['item_id'], $item['quantity']) || !is_numeric($item['quantity'])) {
                     return response()->json([
                         'success' => false,
-                        'short_error' => 'Invalid item entry.',
-                        'error' => 'Each item must include an id and numeric quantity.',
+                        'short_error' => __('t.fiscalization.invalid_item_entry.short_error'),
+                        'error' => __('t.fiscalization.invalid_item_entry.error'),
                     ], 400);
                 }
 
@@ -138,8 +139,8 @@ class FiscalRecordController extends Controller
                 if (!$dbItem) {
                     return response()->json([
                         'success' => false,
-                        'short_error' => 'Item not found.',
-                        'error' => "Item ID {$item['item_id']} does not belong to this user.",
+                        'short_error' => __('t.fiscalization.item_not_found.short_error'),
+                        'error' => __('t.fiscalization.item_not_found.error'),
                     ], 403);
                 }
 
@@ -168,16 +169,16 @@ class FiscalRecordController extends Controller
             if (abs($calculatedTotal - round($validated['total'], 2)) > 0.01) {
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Items total mismatch.',
-                    'error' => "Items subtotal ($calculatedTotal) does not match the declared total ({$validated['total']}).",
+                    'short_error' => __('t.fiscalization.items_total_mismatch.short_error'),
+                    'error' => __('t.fiscalization.items_total_mismatch.error'),
                 ], 400);
             }
 
             if ($validated['paid'] && round($validated['paid'], 2) < $validated['total']) {
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Paid amount issue.',
-                    'error' => "Cash paid ({$validated['paid']}) is less than the total {$validated['total']}.",
+                    'short_error' => __('t.fiscalization.paid_amount_issue.short_error'),
+                    'error' => __('t.fiscalization.paid_amount_issue.error'),
                 ], 400);
             }
 
@@ -189,30 +190,30 @@ class FiscalRecordController extends Controller
                 if (!$transaction->verifySignature()) {
                     return response()->json([
                         'success' => false,
-                        'short_error' => 'Invalid signature.',
-                        'error' => 'The transaction signature is invalid.',
+                        'short_error' => __('t.fiscalization.invalid_signature.short_error'),
+                        'error' => __('t.fiscalization.invalid_signature.error'),
                     ], 400);
                 }
                 if ($transaction->status !== 'approved') {
                     return response()->json([
                         'success' => false,
-                        'short_error' => 'Transaction not approved.',
-                        'error' => 'Only approved transactions can be fiscalized.',
+                        'short_error' => __('t.fiscalization.transaction_not_approved.short_error'),
+                        'error' => __('t.fiscalization.transaction_not_approved.error'),
                     ], 403);
                 }
                 Log::info("DEBUG VALUES", [floatval($validated['total']), floatval($transaction->amount)]);
                 if (abs($calculatedTotal - round($transaction->amount, 2)) > 0.01) {
                     return response()->json([
                         'success' => false,
-                        'short_error' => 'Amount mismatch.',
-                        'error' => 'Total does not match the transaction amount.',
+                        'short_error' => __('t.fiscalization.amount_mismatch.short_error'),
+                        'error' => __('t.fiscalization.amount_mismatch.error'),
                     ], 400);
                 }
                 if (FiscalRecord::where('transaction_id', $transaction->id)->where('status', 'fiscalized')->exists()) {
                     return response()->json([
                         'success' => false,
-                        'short_error' => 'Duplicate fiscal record.',
-                        'error' => 'Duplicate fiscal record for this transaction.',
+                        'short_error' => __('t.fiscalization.duplicate_fiscal_record.short_error'),
+                        'error' => __('t.fiscalization.duplicate_fiscal_record.error'),
                     ], 409);
                 }
             }
@@ -221,8 +222,8 @@ class FiscalRecordController extends Controller
             if (!$user->fiscal_key_enabled || $user->fiscal_key !== $validated['fiscal_key']) {
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Fiscal key issue.',
-                    'error' => 'Fiscal key is incorrect or disabled.',
+                    'short_error' => __('t.fiscalization.fiscal_key_issue.short_error'),
+                    'error' => __('t.fiscalization.fiscal_key_issue.error'),
                 ], 403);
             }
 
@@ -240,13 +241,7 @@ class FiscalRecordController extends Controller
             $fiscalRecord->storeSignature();
             $fiscalRecord->save();
 
-            $map = [
-                'ad' => 'PLC',
-                'ead' => 'Sole PLC',
-                'eood' => 'Ltd (Sole)',
-                'et' => 'Sole Trader',
-                'ood' => 'Ltd',
-            ];
+            $map = __('t.company.legal_forms');
 
             $ppml = $this->generateReceipt(
                 $company->name . " " . $map[$company->legal_form],
@@ -254,7 +249,7 @@ class FiscalRecordController extends Controller
                 $company->address,
                 $validated['cash_register'],
                 $device->number, // shop_number from device
-                $device->name,   // operator_name from device
+                $device->device_name,   // operator_name from device
                 $groupedItems,
                 round(($validated['paid'] ?? 0) - $validated['total'], 2),
                 $transaction->sender->account_number ?? null,
@@ -264,7 +259,8 @@ class FiscalRecordController extends Controller
                 $fiscalRecord->id,
                 Carbon::now()->format('d.m.Y H:i:s'),
                 $validated['payment'],
-                $device->id
+                $device->id,
+                $validated['page_width'],
             );
 
             DB::commit();
@@ -310,7 +306,9 @@ class FiscalRecordController extends Controller
         int $fiscalRecordId,
         string $date,
         string $paymentMethod,
-        int $deviceId
+        int $deviceId,
+        int $pageWidth,
+
     ) {
         // Calculate printable length, accounting for <b> tag double-width behavior except spaces
         function printableLength($text)
@@ -334,7 +332,7 @@ class FiscalRecordController extends Controller
             return $length;
         }
 
-        $lineWidth = 48;
+        $lineWidth = $pageWidth == 80 ? 48 : 32;
 
         function padLine($left, $right, $lineWidth)
         {
@@ -357,9 +355,13 @@ class FiscalRecordController extends Controller
         // Header
         $receipt .= "<center>{$companyName}\n";
         $receipt .= "{$address}\n";
-        $receipt .= "UIC: {$companyNumber}\n";
-        $receipt .= "VAT Number: FC{$companyNumber}\n";
-        $receipt .= "Cash register {$cashRegister}, Store {$shopNumber}, Operator {$operatorName}\n";
+        $receipt .= __('t.receipt.uic', ['number' => $companyNumber]) . "\n";
+        $receipt .= __('t.receipt.vat_number', ['number' => $companyNumber]) . "\n";
+        $receipt .= __('t.receipt.cash_register', [
+            'register' => $cashRegister,
+            'store'    => $shopNumber,
+            'operator' => $operatorName,
+        ]) . "\n";
         $receipt .= "</center>\n\n";
 
         foreach ($items as $item) {
@@ -377,47 +379,54 @@ class FiscalRecordController extends Controller
             $receipt .= padLine('', "PSU {$totFmt}", $lineWidth) . "\n";
         }
 
-        $receipt .= str_repeat('=', $lineWidth) . "\n";
+        $receipt .= str_repeat('*', $lineWidth) . "\n";
 
         $sum = 0;
         foreach ($items as $item) {
             $sum += $item['quantity'] * $item['price'];
         }
         $sumFmt = number_format($sum, 2, '.', '');
-        $receipt .= padLine('<b>TOTAL:</b>', "<b>PSU {$sumFmt}</b>", $lineWidth) . "\n";
-        $receipt .= str_repeat('=', $lineWidth) . "\n";
+        $receipt .= padLine(
+            '<b>' . __('t.receipt.total') . '</b>',
+            $pageWidth == 80 ? "<b>PSU {$sumFmt}</b>" : "PSU {$sumFmt}",
+            $lineWidth
+        ) . "\n";
+        $receipt .= str_repeat('*', $lineWidth) . "\n";
 
         if ($paymentMethod === 'cash') {
             $paid = $sumFmt + $change;
-            $receipt .= padLine('Paid (in cash)', "PSU {$paid}", $lineWidth) . "\n";
+            $receipt .= padLine(__('t.receipt.paid_cash'), "PSU {$paid}", $lineWidth) . "\n";
             $changeFmt = number_format($change, 2, '.', '');
-            $receipt .= padLine('Change', "PSU {$changeFmt}", $lineWidth) . "\n\n";
+            $receipt .= padLine(__('t.receipt.change'), "PSU {$changeFmt}", $lineWidth) . "\n\n";
         } else {
-            $receipt .= padLine('Paid (by card)', "PSU {$sumFmt}", $lineWidth) . "\n\n";
+            $receipt .= padLine(__('t.receipt.paid_card'), "PSU {$sumFmt}", $lineWidth) . "\n\n";
             $receipt .= str_repeat('*', $lineWidth) . "\n";
-            $receipt .= centerLine('# MOCKSYS BANK CARD PAYMENT #', $lineWidth) . "\n";
+            $receipt .= centerLine(__('t.receipt.mock_bank_header'), $lineWidth) . "\n";
             $receipt .= str_repeat('*', $lineWidth) . "\n";
-            $receipt .= "# Entered by hand\n";
+            $receipt .= __('t.receipt.entered_by_hand') . "\n";
 
             $masked = str_repeat('*', max(0, strlen($accountNumber) - 3)) . substr($accountNumber, -3);
-            $receipt .= "# Account number: {$masked}\n";
-            $receipt .= "Transaction signature\n";
+            $receipt .= __('t.receipt.account_number', ['masked' => $masked]) . "\n";
+            $receipt .= __('t.receipt.transaction_signature') . "\n";
 
             $chunks = str_split($signature, 32);
             foreach ($chunks as $chunk) {
                 $receipt .= $chunk . "\n";
             }
-            $receipt .= "# PIN REQUIRED #\n\n";
+            $receipt .= __('t.receipt.pin_required') . "\n\n";
         }
 
-        $receipt .= "<center># THANK YOU FOR YOUR PURCHASE #\n";
-        $receipt .= "# KEEP RECEIPT FOR PROVING YOUR PURCHASE #\n";
+        $receipt .= "<center>" . __('t.receipt.thank_you') . "\n";
+        $receipt .= __('t.receipt.keep_receipt') . "\n";
         $receipt .= "</center>\n";
 
-        $itemCount = count($items) . ' ITEM/S';
+        $itemCount = __('t.receipt.items_count', ['count' => count($items)]);
         $receipt .= padLine($date, $itemCount, $lineWidth) . "\n";
 
-        $receipt .= "<center><qr>" . $date . " " . ($transactionId ? "{$transactionId} - " : "") . "{$fiscalRecordId} - {$companyNumber}\n" . "</qr>SYSTEM FISCAL RECORD\n";
+        $receipt .= "<center><qr>" . $date . " " . ($transactionId ? "{$transactionId} - " : "") .
+            "{$fiscalRecordId} - {$companyNumber}\n" .
+            "</qr>" . __('t.receipt.system_fiscal_record') . "\n";
+
         $receipt .= ($transactionId ? "{$transactionId} - " : "") . "{$fiscalRecordId} - {$companyNumber}\n";
         $receipt .= strtoupper($fiscalSignature) . "\n";
         $receipt .= "</center>\n\n";

@@ -18,11 +18,17 @@ class RoleMiddleware
         $user = $request->user();
 
         if (!$user) {
-            return response()->json(['success' => false, 'error' => 'Unauthorized'], 401);
+            return response()->json([
+                'success' => false,
+                'error' => __('t.middleware.unauthorized')
+            ], 401);
         }
 
         if (!in_array($user->role, $roles)) {
-            return response()->json(['success' => false, 'error' => 'Forbidden – Insufficient role'], 403);
+            return response()->json([
+                'success' => false,
+                'error' => __('t.middleware.forbidden_role')
+            ], 403);
         }
 
         return $next($request);

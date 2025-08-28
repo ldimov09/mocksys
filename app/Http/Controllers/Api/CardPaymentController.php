@@ -42,7 +42,7 @@ class CardPaymentController extends Controller
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'short_error' => 'Invalid input data.',
+                'short_error' => __('t.transaction.invalid_input'),
                 'error' => $e->errors(),
             ], 400);
         }
@@ -54,8 +54,8 @@ class CardPaymentController extends Controller
             if(!$this->nonceService->validate($validated['nonce'], "transaction")){
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Invalid nonce.',
-                    'error' => 'Invalid or expired nonce.'
+                    'short_error' => __('t.transaction.invalid_nonce'),
+                    'error' => __('t.transaction.invalid_or_expired_nonce')
                 ], 401);
             }
             
@@ -67,8 +67,8 @@ class CardPaymentController extends Controller
             if(!$this->deviceRepository->doesBelongToCompany($device, $validated["merchant_id"])){
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Device error.',
-                    'error' => 'Device does not belong to the given merchant.'
+                    'short_error' => __('t.transaction.device_error'),
+                    'error' => __('t.transaction.device_mismatch'),
                 ], 401);
             }
 
@@ -88,13 +88,13 @@ class CardPaymentController extends Controller
                 !$receiver->transaction_key_enabled
             ) {
                 $transaction->status = 'declined';
-                $transaction->error = 'Transaction key is disabled or invalid.';
+                $transaction->error =  __('t.transaction.invalid_transaction_key');
                 $transaction->save();
                 DB::commit();
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Key issue.',
-                    'error' => 'Transaction key is disabled or invalid.'
+                    'short_error' => __('t.transaction.key_issue'),
+                    'error' =>  __('t.transaction.invalid_transaction_key'),
                 ], 403);
             }
 
@@ -102,25 +102,25 @@ class CardPaymentController extends Controller
             // Check if receiver or sender is inactive
             if (!$receiver->status->isActive()) {
                 $transaction->status = 'declined';
-                $transaction->error = 'Receiver account is inactive.';
+                $transaction->error = __('t.transaction.receiver_inactive');
                 $transaction->save();
                 DB::commit();
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'User inactive.',
-                    'error' => 'Receiver account is inactive.'
+                    'short_error' => __('t.transaction.user_inactive'),
+                    'error' => __('t.transaction.receiver_inactive')
                 ], 403);
             }
 
             if (!$sender->status->isActive()) {
                 $transaction->status = 'declined';
-                $transaction->error = 'Sender account is inactive.';
+                $transaction->error = __('t.transaction.sender_inactive');
                 $transaction->save();
                 DB::commit();
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Inactive user.',
-                    'error' => 'Sender account is inactive.'
+                    'short_error' => __('t.transaction.inactive_user'),
+                    'error' => __('t.transaction.sender_inactive')
                 ], 403);
             }
 
@@ -128,13 +128,13 @@ class CardPaymentController extends Controller
             // Check sender’s PIN
             if (!Hash::check($validated['sender_pin'], $sender->password)) {
                 $transaction->status = 'declined';
-                $transaction->error = 'Invalid sender PIN.';
+                $transaction->error = __('t.transaction.invalid_pin');
                 $transaction->save();
                 DB::commit();
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Invalid PIN.',
-                    'error' => 'Invalid sender PIN.'
+                    'short_error' => __('t.transaction.invalid_pin'),
+                    'error' => __('t.transaction.invalid_sender_pin')
                 ], 403);
             }
 
@@ -142,13 +142,13 @@ class CardPaymentController extends Controller
             // Check if sender has sufficient funds
             if ($sender->balance < $validated['amount']) {
                 $transaction->status = 'declined';
-                $transaction->error = 'Insufficient funds.';
+                $transaction->error = __('t.transaction.insufficient_funds');
                 $transaction->save();
                 DB::commit();
                 return response()->json([
                     'success' => false,
-                    'short_error' => 'Insufficient funds.',
-                    'error' => 'Balance issue.'
+                    'short_error' => __('t.transaction.insufficient_funds'),
+                    'error' => __('t.transaction.balance_issue'),
                 ], 403);
             }
 
@@ -179,8 +179,8 @@ class CardPaymentController extends Controller
             Log::error($e->getMessage());
             return response()->json([
                 'success' => false,
-                'short_error' => 'Unexpected error',
-                'error' => 'Unexpected error occured. Please try again later.'
+                'short_error' => __('t.transaction.unexpected_error'),
+                'error' => __('t.transaction.unexpected_error_details')
             ], 500);
         }
     }
