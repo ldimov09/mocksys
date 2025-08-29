@@ -128,6 +128,11 @@ return [
             'short_error' => 'Fiscal key issue.',
             'error' => 'Fiscal key is incorrect or disabled.',
         ],
+        "pcs" => "pcs",
+        "kg" => "kg",
+        "L" => "L",
+        "g" => "g",
+        "mL" => "mL"
     ],
     'receipt' => [
         'uic' => 'UIC: :number',

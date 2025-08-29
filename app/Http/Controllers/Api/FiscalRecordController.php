@@ -371,7 +371,8 @@ class FiscalRecordController extends Controller
             $unit = $item['unit'];
             $qtyFmt  = number_format($quantity, 3, '.', '');
             $unitFmt = number_format($price,    2, '.', '');
-            $right1  = "x{$qtyFmt} {$unit} @ PSU {$unitFmt}";
+            $unitText = __('t.fiscalization.'.$unit) ?? "";
+            $right1  = "x{$qtyFmt} {$unitText} @ PSU {$unitFmt}";
             $receipt .= padLine($name, $right1, $lineWidth) . "\n";
 
             $total   = $quantity * $price;
@@ -395,7 +396,8 @@ class FiscalRecordController extends Controller
 
         if ($paymentMethod === 'cash') {
             $paid = $sumFmt + $change;
-            $receipt .= padLine(__('t.receipt.paid_cash'), "PSU {$paid}", $lineWidth) . "\n";
+            $paidFmt = number_format($paid, 2, '.', '');
+            $receipt .= padLine(__('t.receipt.paid_cash'), "PSU {$paidFmt}", $lineWidth) . "\n";
             $changeFmt = number_format($change, 2, '.', '');
             $receipt .= padLine(__('t.receipt.change'), "PSU {$changeFmt}", $lineWidth) . "\n\n";
         } else {

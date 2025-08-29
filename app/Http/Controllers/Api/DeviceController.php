@@ -94,7 +94,7 @@ class DeviceController extends Controller
             return response()->json(['message' => __('t.device.user_not_found')], 404);
         }
 
-        $companyId = $user->company_id;
+        $companyId = $user->company_id ?? null;
 
         return response()->json([
             'company_id' => $companyId,

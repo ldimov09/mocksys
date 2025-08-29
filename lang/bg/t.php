@@ -25,7 +25,7 @@ return [
     ],
 
     'transaction' => [
-        'invalid_input' => 'Невалидни данни за въвеждане.',
+        'invalid_input' => 'Невалидни данни.',
         'invalid_nonce' => 'Невалиден nonce.',
         'invalid_or_expired_nonce' => 'Невалиден или изтекъл nonce.',
         'device_error' => 'Грешка с устройството.',
@@ -128,11 +128,16 @@ return [
             'short_error' => 'Проблем с фискалния ключ.',
             'error' => 'Фискалният ключ е грешен или деактивиран.',
         ],
+        "pcs" => "бр.", 
+        "kg" => "кг", 
+        "L" => "Л", 
+        "g" => "г.", 
+        "mL" => "мл."
     ],
 
     'receipt' => [
         'uic' => 'ЕИК: :number',
-        'vat_number' => 'ДДС номер: FC:number',
+        'vat_number' => 'НОМЕР ЗДДС: FC:number',
         'cash_register' => 'Касов апарат :register, Магазин :store, Оператор :operator',
         'total' => 'ОБЩО:',
         'paid_cash' => 'Платено (в брой)',
