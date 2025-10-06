@@ -11,7 +11,7 @@
             <input type="text" name="account_number" id="account_number" required value="{{ old('account_number', '') }}">
 
             <label for="password">Password</label>
-            <input type="password" name="password" id="password" required>
+            <input type="password" name="password" id="password" >
 
             <label for="specialPassword">Special password (admin only)</label>
             <input type="password" name="specialPassword" id="specialPassword">

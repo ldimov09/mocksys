@@ -37,27 +37,32 @@
                 <div class="form-grid">
                     <div class="field">
                         <label>Name</label>
-                        <input type="text" name="name" value="{{ old('name') }}" required>
+                        <input type="text" name="name" value="{{ old('name') }}" >
                     </div>
 
                     <div class="field">
                         <label>Account Number</label>
-                        <input type="text" name="account_number" value="{{ old('account_number') }}" required>
+                        <input type="text" name="account_number" value="{{ old('account_number') }}" >
                     </div>
 
                     <div class="field">
                         <label>Email</label>
-                        <input type="email" name="email" value="{{ old('email') }}" required>
+                        <input type="email" name="email" value="{{ old('email') }}" >
+                    </div>
+
+                    <div class="field">
+                        <label>Username</label>
+                        <input type="text" name="username" value="{{ old('username') }}" >
                     </div>
 
                     <div class="field">
                         <label>Password</label>
-                        <input type="password" name="password" required>
+                        <input type="password" name="password" >
                     </div>
 
                     <div class="field">
                         <label>Confirm Password</label>
-                        <input type="password" name="password_confirmation" required>
+                        <input type="password" name="password_confirmation" >
                     </div>
 
                     <div class="field">

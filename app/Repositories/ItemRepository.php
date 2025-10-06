@@ -32,8 +32,13 @@ class ItemRepository
         return Item::where('id', $id)->where('user_id', $userId)->first();
     }
 
-    public function checkNumber($number)
+    public function checkNumber($number, $businessId)
     {
-        return !Item::where('number', $number)->first();
+        return !Item::where('number', $number)->where('user_id', $businessId)->first();
+    }
+
+    public function findById($id)
+    {   
+        return Item::find($id);
     }
 }

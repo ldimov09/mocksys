@@ -15,12 +15,14 @@ class TransactionRepository
                 Carbon::now()->subDays(30),
                 Carbon::now()
             ])
+            ->orderBy('created_at', 'desc')
             ->get();
         $result['asSender'] = Transaction::where('sender_id', $userId)
             ->whereBetween('created_at', [
                 Carbon::now()->subDays(30),
                 Carbon::now()
             ])
+            ->orderBy('created_at', 'desc')
             ->get();
         return $result;
     }

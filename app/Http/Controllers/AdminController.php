@@ -11,6 +11,10 @@ use Illuminate\Validation\Rules\Enum;
 
 class AdminController extends Controller
 {
+    public function __construct(
+        private \App\Repositories\UserRepository $userRepository
+    ) {}
+
     public function index()
     {
         return view('admin.dashboard');
@@ -36,12 +40,20 @@ class AdminController extends Controller
             'password' => 'required|confirmed',
             'role' => 'required|in:admin,business,user',
             'status' => ['required', new Enum(UserStatus::class)],
+            'username' => 'required|string|max:255|unique:users,user_name',
         ]);
+
+        // Generate unique card number
+        do {
+            $cardNumber = rand(10000000, 99999999) . '-' . rand(1000, 9999);
+        } while (!$this->userRepository->checkCardNumber($cardNumber));
 
         $user = User::create([
             'name' => $data["name"],
             'account_number' => $data["account_number"],
+            "card_number" => $cardNumber,
             'email' => $data["email"],
+            'status' => $data["status"],
             'password' => Hash::make($data["password"]),
             'role' => $data["role"],
             "transaction_key" => null,
@@ -49,9 +61,10 @@ class AdminController extends Controller
             "fiscal_key" => null,
             "fiscal_key_enabled" => false,
             "keys_locked_by_admin" => true,
+            "user_name" => $data["username"],
         ]);
 
-        LogHelper::log('users', "User created: Account number: ".$user->account_number, request()->user()->id);
+        LogHelper::log('users', "User created: Account number: " . $user->account_number, request()->user()->id);
         return redirect()->route('admin.users')->with('success', 'User created.');
     }
 
@@ -82,7 +95,7 @@ class AdminController extends Controller
         }
 
         $user->save();
-        LogHelper::log('users', "User updated: Account number: ".$user->account_number, request()->user()->id);
+        LogHelper::log('users', "User updated: Account number: " . $user->account_number, request()->user()->id);
         return redirect()->route('admin.users')->with('success', 'User updated.');
     }
 
@@ -94,7 +107,7 @@ class AdminController extends Controller
             return back()->with('error', 'You can\'t delete other admin accounts.');
         }
 
-        LogHelper::log('users', "User deleted: Account number: ".$user->account_number, request()->user()->id);
+        LogHelper::log('users', "User deleted: Account number: " . $user->account_number, request()->user()->id);
         $user->delete();
         return redirect()->route('admin.users')->with('success', 'User deleted.');
     }

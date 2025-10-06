@@ -147,17 +147,17 @@
                     @csrf
                     <div class="field">
                         <label>Receiver Account Number</label>
-                        <input type="text" name="receiver_account" value="{{ old('receiver_account') }}" required>
+                        <input type="text" name="receiver_account" value="{{ old('receiver_account') }}" >
                     </div>
 
                     <div class="field">
                         <label>Amount (in Ʉ)</label>
-                        <input type="number" step="0.01" name="amount" value="{{ old('amount') }}" required>
+                        <input type="number" step="0.01" name="amount" value="{{ old('amount') }}" >
                     </div>
 
                     <div class="field">
                         <label>Your PIN (Password)</label>
-                        <input type="password" name="pin" required>
+                        <input type="password" name="pin" >
                     </div>
 
                     <button class="ui ui-button ui-corner-all ui-corner-all" type="submit">Send Transfer</button>

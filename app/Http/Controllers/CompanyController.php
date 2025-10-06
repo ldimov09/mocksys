@@ -37,6 +37,12 @@ class CompanyController extends Controller
             'account_id' => 'required|exists:users,id',
         ]);
 
+        $user = User::find($validated['account_id']);
+        if (!$user || $user->role !== 'business') {
+            return redirect()->back()
+                ->with('error', 'Selected account is not a business user!');
+        }
+
         // Apply the check-digit algorithm
         $eik8 = $validated['number'];
         $validated['number'] = $eik8 . $this->calculateEIKCheckDigit($eik8);
@@ -54,6 +60,9 @@ class CompanyController extends Controller
             'legal_form' => $validated['legal_form'],
             'account_id' => $validated['account_id'],
         ]);
+
+        $user->company_id = $company->id;
+        $user->save();
 
         return redirect()->route('admin.companies.index')
             ->with('success', 'Company created successfully!');
@@ -84,15 +93,19 @@ class CompanyController extends Controller
         return $remainder2 < 10 ? $remainder2 : 0;
     }
 
-    public function edit(Company $company)
+    public function edit(int $company)
     {
+        $company = Company::find($company);
+
         $businessUsers = User::where('role', 'business')->get();
 
         return view('admin.companies.edit', compact('company', 'businessUsers'));
     }
 
-    public function update(Request $request, Company $company)
+    public function update(Request $request, int $company)
     {
+        $company = Company::find($company);
+
         $validated = $request->validate([
             'manager_name' => 'required|string|max:255',
             'name' => 'required|string|max:255|unique:companies,name,' . $company->id,

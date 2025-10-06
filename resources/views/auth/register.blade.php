@@ -24,22 +24,22 @@
             @csrf
 
             <label for="name">Full Name</label>
-            <input type="text" name="name" id="name" required>
+            <input type="text" name="name" id="name" >
 
             <label for="account_number">Account Number</label>
-            <input type="text" name="account_number" id="account_number" required>
+            <input type="text" name="account_number" id="account_number" >
 
             <label for="email">Email</label>
-            <input type="email" name="email" id="email" required>
+            <input type="email" name="email" id="email" >
 
             <label for="password">Password</label>
-            <input type="password" name="password" id="password" required>
+            <input type="password" name="password" id="password" >
 
             <label for="password_confirmation">Confirm Password</label>
-            <input type="password" name="password_confirmation" id="password_confirmation" required>
+            <input type="password" name="password_confirmation" id="password_confirmation" >
 
             <label for="role">Role</label>
-            <select name="role" id="role" required>
+            <select name="role" id="role" >
                 <option value="user">User</option>
                 <option value="business">Business</option>
                 <option value="admin">Admin</option>

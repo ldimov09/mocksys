@@ -25,27 +25,27 @@
                     <div class="form-grid">
                         <div class="field">
                             <label>Manager Name</label>
-                            <input type="text" name="manager_name" value="{{ old('manager_name') }}" required>
+                            <input type="text" name="manager_name" value="{{ old('manager_name') }}" >
                         </div>
 
                         <div class="field">
                             <label>Company Name</label>
-                            <input type="text" name="name" value="{{ old('name') }}" required>
+                            <input type="text" name="name" value="{{ old('name') }}" >
                         </div>
 
                         <div class="field">
                             <label>Company Number</label>
-                            <input type="text" name="number" value="{{ old('number') }}" required>
+                            <input type="text" name="number" value="{{ old('number') }}" >
                         </div>
 
                         <div class="field">
                             <label>Address</label>
-                            <input type="text" name="address" value="{{ old('address') }}" required>
+                            <input type="text" name="address" value="{{ old('address') }}" >
                         </div>
 
                         <div class="field">
                             <label>Legal form</label>
-                            <select name="legal_form" class="ui dropdown" required>
+                            <select name="legal_form" class="ui dropdown" >
                                 <option value="">-- Select Legal form --</option>
                                 <option value="ad" {{ old('legal_form') == 'ad' ? 'selected' : '' }}>АД</option>
                                 <option value="ead" {{ old('legal_form') == 'ead' ? 'selected' : '' }}>ЕАД</option>
@@ -57,7 +57,7 @@
 
                         <div class="field">
                             <label>Associated Business Account</label>
-                            <select name="account_id" class="ui dropdown" required>
+                            <select name="account_id" class="ui dropdown" >
                                 <option value="">-- Select Business User --</option>
                                 @foreach ($businessUsers as $user)
                                     <option value="{{ $user->id }}"

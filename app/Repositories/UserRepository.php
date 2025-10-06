@@ -23,4 +23,14 @@ class UserRepository
     {
         return !User::where('account_number', $number)->first();
     }
+
+    public function checkCardNumber($number)
+    {
+        return !User::where('card_number', $number)->first();
+    }
+
+    public function listByRole($role)
+    {
+        return User::where('role', $role)->get();
+    }
 }

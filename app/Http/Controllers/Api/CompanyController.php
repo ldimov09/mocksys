@@ -34,13 +34,15 @@ class CompanyController extends Controller
             'legal_form' => ['required', Rule::in(['ad', 'ead', 'eood', 'et', 'ood'])],
         ]);
 
+        $user = $request->user();
+
         if ($this->companyRepo->findByUserId(Auth::id())) {
             return response()->json(['message' => __('t.company.already_exists')], 409);
         }
 
         // Create base record without number
         $company = Company::create([
-            'account_id' => Auth::id(),
+            'account_id' => $user->id,
             'manager_name' => $request->manager_name,
             'name' => $request->name,
             'address' => $request->address,
@@ -48,14 +50,19 @@ class CompanyController extends Controller
             'number' => 'placeholder' // Temporary number
         ]);
 
+        
         // Generate EIK number: pad to 8 digits + 1 check digit
         $baseNumber = str_pad($company->id, 8, '0', STR_PAD_LEFT);
         $checkDigit = CompanyDigitHelper::calculateEIKCheckDigit($baseNumber);
         $fullNumber = $baseNumber . $checkDigit;
-
+        
         // Save it
         $company->number = $fullNumber;
         $company->save();
+        
+        // Save company ID to user
+        $user->company_id = $company->id;
+        $user->save();
 
         return response()->json($company, 201);
     }

@@ -149,6 +149,7 @@
                                 'eood' => 'Ltd (Sole)', // Sole Proprietor Ltd. (ЕООД)
                                 'et' => 'Sole Trader', // Sole Trader (ЕТ)
                                 'ood' => 'Ltd', // Private Limited Company (ООД)
+                                "N/A" => "N/A"
                             ];
                         @endphp
                         @foreach ($fiscalRecords->where('status', 'fiscalized') as $record)
@@ -159,7 +160,7 @@
                                 </td>
                                 <td>{{ $record->id }}</td>
                                 <td>{{ $record->transaction_id ? 'Card' : 'Cash' }}</td>
-                                <td>{{ $record->company->name . ' ' . $map[$record->company->legal_form] }}</td>
+                                <td>{{ ($record->company->name ?? "N/A") . ' ' . $map[$record->company->legal_form ?? "N/A"] }}</td>
                                 <td>{!! $record->transaction_id ? '#' . $record->transaction_id : '<i>No transaction</i>' !!}</td>
                                 <td>{{ $record->business->name ?? 'N/A' }}
                                     ({{ $record->business->account_number ?? 'N/A' }})

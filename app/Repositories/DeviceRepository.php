@@ -18,6 +18,11 @@ class DeviceRepository
         return Device::where('id', $id)->where('user_id', $userId)->firstOrFail();
     }
 
+    public function findById(int $id)
+    {
+        return Device::find($id);
+    }
+
     public function create(array $data)
     {
         return Device::create($data);

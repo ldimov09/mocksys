@@ -32,7 +32,7 @@ class CardPaymentController extends Controller
         Log::info("TRANSACTION INIT");
         try {
             $validated = $request->validate([
-                'sender_account_number' => 'required|string|exists:users,account_number',
+                'sender_card_number' => 'required|string|exists:users,card_number',
                 "merchant_id" => "string|exists:companies,id",
                 'amount' => 'required|numeric|min:0.01',
                 'transaction_key' => 'required|string',
@@ -73,7 +73,7 @@ class CardPaymentController extends Controller
             }
 
             Log::info("TRANSACTION VALIDATION ".$validated["merchant_id"]." before: getting users");
-            $sender = User::where('account_number', $validated['sender_account_number'])->first();
+            $sender = User::where('card_number', $validated['sender_card_number'])->first();
             $receiver = User::where('company_id', $validated['merchant_id'])->first();
 
             // Save the transaction as pending
@@ -176,7 +176,7 @@ class CardPaymentController extends Controller
             DB::rollBack();
             LogHelper::log('error', 'Unexpected error during transaction #' . ($transaction->id ?? 'none') . ' processing: ' . $e->getMessage(), null, null);
             Log::info("TRANSACTION ERROR");
-            Log::error($e->getMessage());
+            Log::error($e);
             return response()->json([
                 'success' => false,
                 'short_error' => __('t.transaction.unexpected_error'),

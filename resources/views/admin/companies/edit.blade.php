@@ -14,8 +14,9 @@
 @endsection
 
 @section('content')
-    <h2 class="ui header">Update company</h2>
-    <form class="ui form" method="POST" action="{{ route('admin.companies.update', $company->id) }}" novalidate>
+    <h2 class="ui header">Update company ID: {{ $company->id }}</h2>
+
+    <form class="ui form" method="POST" action="{{ route('admin.companies.update', ['company' => $company->id]) }}" novalidate>
         @csrf
         @method('PUT')
         <div id="accordion">
@@ -25,12 +26,12 @@
                     <div class="field">
                         <label>Manager Name</label>
                         <input type="text" name="manager_name" value="{{ old('manager_name', $company->manager_name) }}"
-                            required>
+                            >
                     </div>
 
                     <div class="field">
                         <label>Company Name</label>
-                        <input type="text" name="name" value="{{ old('name', $company->name) }}" required>
+                        <input type="text" name="name" value="{{ old('name', $company->name) }}" >
                     </div>
 
                     <div class="field">
@@ -41,7 +42,7 @@
 
                     <div class="field">
                         <label>Address</label>
-                        <input type="text" name="address" value="{{ old('address', $company->address) }}" required>
+                        <input type="text" name="address" value="{{ old('address', $company->address) }}" >
                     </div>
 
                     <div class="field">
@@ -59,7 +60,7 @@
 
                     <div class="field">
                         <label>Associated Business Account</label>
-                        <select name="account_id" class="ui dropdown" required>
+                        <select name="account_id" class="ui dropdown" >
                             <option value="">-- Select Business User --</option>
                             @foreach ($businessUsers as $user)
                                 <option value="{{ $user->id }}"

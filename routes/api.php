@@ -21,6 +21,7 @@ Route::middleware('verify.device')->withoutMiddleware('auth:sanctum')->group(fun
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::post('/register/full', [RegistrationController::class, 'fullRegister']);
+Route::post('/register', [RegistrationController::class, 'register']);
 
 Route::get('/device/{deviceKey}', [DeviceController::class, 'getDeviceData']);
 
@@ -38,9 +39,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/devices/{id}', [DeviceController::class, 'destroy']);
     
     Route::post('/keys/transaction/toggle', [AuthController::class, 'toggleTransactionKey'])->name('keys.transaction.toggle');
-    Route::post('/keys/fiscal/toggle', [AuthController::class, 'toggleFiscalKey'])->name('keys.fiscal.toggle');
+    Route::post('/keys/transaction/reset', [AuthController::class, 'resetTransactionKey'])->name('keys.transaction.reset');
     Route::middleware('role:business')->group(function(){
-        Route::post('/keys/transaction/reset', [AuthController::class, 'resetTransactionKey'])->name('keys.transaction.reset');
+        Route::post('/keys/fiscal/toggle', [AuthController::class, 'toggleFiscalKey'])->name('keys.fiscal.toggle');
         Route::post('/keys/fiscal/reset', [AuthController::class, 'resetFiscalKey'])->name('keys.fiscal.reset');
     });
 

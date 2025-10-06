@@ -38,12 +38,12 @@
                 <div class="form-grid">
                     <div class="field">
                         <label>Name</label>
-                        <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
+                        <input type="text" name="name" value="{{ old('name', $user->name) }}" >
                     </div>
 
                     <div class="field">
                         <label>Email</label>
-                        <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
+                        <input type="email" name="email" value="{{ old('email', $user->email) }}" >
                     </div>
 
                     <div class="field">
@@ -58,7 +58,7 @@
 
                     <div class="field">
                         <label>Role</label>
-                        <select name="role" required>
+                        <select name="role" >
                             <option value="user" {{ old('role', $user->role) == 'user' ? 'selected' : '' }}
                                 {{ old('role', $user->role) == 'admin' ? 'disabled' : '' }}>User</option>
                             <option value="business" {{ old('role', $user->role) == 'business' ? 'selected' : '' }}

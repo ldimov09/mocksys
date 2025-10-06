@@ -151,6 +151,7 @@ class FiscalRecordController extends Controller
                     $groupedItems[$dbItem->id] = [
                         'id' => $dbItem->id,
                         'name' => $dbItem->name,
+                        'short_name' => $dbItem->short_name,
                         'unit' => $dbItem->unit,
                         'price' => $dbItem->price,
                         'quantity' => $item['quantity'],
@@ -365,7 +366,7 @@ class FiscalRecordController extends Controller
         $receipt .= "</center>\n\n";
 
         foreach ($items as $item) {
-            $name = $item['name'];
+            $name = $item['short_name'] ?? $item['name'] ?? "-Not Found-";
             $quantity = $item['quantity'];
             $price = $item['price'];
             $unit = $item['unit'];
@@ -373,11 +374,11 @@ class FiscalRecordController extends Controller
             $unitFmt = number_format($price,    2, '.', '');
             $unitText = __('t.fiscalization.'.$unit) ?? "";
             $right1  = "x{$qtyFmt} {$unitText} @ PSU {$unitFmt}";
-            $receipt .= padLine($name, $right1, $lineWidth) . "\n";
+            $receipt .= padLine('', $right1, $lineWidth) . "\n";
 
             $total   = $quantity * $price;
             $totFmt  = number_format($total, 2, '.', '');
-            $receipt .= padLine('', "PSU {$totFmt}", $lineWidth) . "\n";
+            $receipt .= padLine($name, "PSU {$totFmt}", $lineWidth) . "\n";
         }
 
         $receipt .= str_repeat('*', $lineWidth) . "\n";

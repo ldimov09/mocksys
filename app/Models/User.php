@@ -20,6 +20,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property string $password
  * @property string $role
  * @property string $account_number
+ * @property string $card_number
  * @property number $balance
  * @property string $transaction_key
  * @property bool $transaction_key_enabled
@@ -44,6 +45,7 @@ class User extends Authenticatable
         'password',
         "role",
         "account_number",
+        "card_number",
         "company_id",
         "user_name",
         "balance",

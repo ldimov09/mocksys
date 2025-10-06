@@ -7,7 +7,9 @@ use App\Http\Controllers\UserKeyController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\FiscalRecordController;
+use App\Http\Controllers\ItemController;
 use App\Http\Controllers\TransactionController;
 
 use Composer\Autoload\ClassLoader;
@@ -50,7 +52,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/{id}/refund', [TransactionController::class, 'refund'])->name('transactions.refund');
-    
+
     Route::get('/fiscal-records', [FiscalRecordController::class, 'index'])->name('fiscal_records.index');
 
     Route::get('/logs', [LogController::class, 'index'])->name('logs');
@@ -58,6 +60,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/keys/{user}/lock', [UserKeyController::class, 'toggleLock'])->name('keys.lock.toggle');
 
     Route::resource('companies', CompanyController::class);
+
+    Route::resource('items', ItemController::class)->names('items');
+
+    Route::resource('devices', DeviceController::class)->names('devices');
 });
 
 Route::middleware(['auth'])->group(function () {
